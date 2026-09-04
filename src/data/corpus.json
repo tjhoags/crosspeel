@@ -1,0 +1,11 @@
+{
+  "generated_at": null,
+  "observed_through": null,
+  "stats": { "endpoints_observed": 0, "clusters_published": 0, "widest_spread_multiple": 0, "last_probe_run": null },
+  "clusters": [],
+  "endpoints": [],
+  "disputes": [],
+  "featured_diff": null,
+  "method_version": "v1",
+  "bakeoff": { "variants": [ { "variant": "A", "price_usd": 6.00 }, { "variant": "B", "price_usd": 11.00 }, { "variant": "C", "price_usd": 19.00 } ], "inputs_per_endpoint": 8, "min_endpoints": 2, "max_endpoints": 8 }
+}
