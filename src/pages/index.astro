@@ -2,7 +2,7 @@
 // Home - document 03, "Home".
 //
 // Above the fold is the diff pane, not prose. Then the three paragraphs from
-// document 03, verbatim. Then four live figures as tabular rows, no cards.
+// document 03, verbatim. Then five live figures as tabular rows, no cards.
 // Then the most recent five clusters as cluster rows, and a link to the index.
 // No testimonials, no logo bar, no pricing table.
 //
@@ -55,6 +55,7 @@ interface Corpus {
   observed_through: string | null;
   stats: {
     endpoints_observed: number;
+    endpoints_screened?: number;
     clusters_published: number;
     widest_spread_multiple: number;
     last_probe_run: string | null;
@@ -116,13 +117,29 @@ const paneHeader = [
   .filter(Boolean)
   .join(' ');
 
-// The four live figures. Zero displays as zero.
+// The five live figures. Zero displays as zero.
+//
+// "Observed" carries document 00's definition and nothing looser: paid for and
+// measured. An endpoint that only ever answered a 402 challenge cost nothing and
+// gave up nothing behind the paywall, so it is screened, not observed. Both
+// figures are shown because the gap between them is real and hiding either one
+// would misstate what the corpus is. Gate G1, 2026-09-04.
+const screened = stats.endpoints_screened;
 const figures = [
   {
     label: 'Endpoints observed',
     value: String(stats.endpoints_observed),
     href: stats.endpoints_observed > 0 ? '/endpoints' : null,
   },
+  ...(typeof screened === 'number'
+    ? [
+        {
+          label: 'Endpoints screened',
+          value: String(screened),
+          href: null,
+        },
+      ]
+    : []),
   {
     label: 'Clusters published',
     value: String(stats.clusters_published),
@@ -198,7 +215,10 @@ const recentClusters = [...(corpus.clusters ?? [])]
 
   <section class="figures" aria-label="Corpus figures">
     <table class="figure-table">
-      <caption>Read from the corpus at build. A figure that is zero displays as zero.</caption>
+      <caption>
+        Read from the corpus at build. A figure that is zero displays as zero. Observed means paid for
+        and measured; screened means called at least once, whether or not the call was paid.
+      </caption>
       <tbody>
         {figures.map((figure) => (
           <tr>

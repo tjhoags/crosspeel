@@ -230,8 +230,15 @@ const HOME_ARGUMENT = [
   'This does not observe ownership, contracts, or intent. It observes responses. Where two endpoints respond identically and price differently, that is what gets published, and the operators are invited to dispute it.',
 ];
 
+// Document 03 specifies four figures. A fifth was added at gate G1 on
+// 2026-09-04: document 00 defines observed as "paid for and measured", the
+// corpus carries 122 such endpoints against 1,265 that returned only a payment
+// challenge, and one label cannot honestly carry both. The deviation from
+// document 03 is recorded in crosspeel-engine/DECISIONS.md. The order is still
+// asserted exactly, against the decided set rather than a loosened one.
 const HOME_FIGURE_LABELS = [
   'Endpoints observed',
+  'Endpoints screened',
   'Clusters published',
   'Widest price spread',
   'Last probe run',
@@ -600,15 +607,25 @@ describe('D3 home page figures - document 03', () => {
       .map((m) => textTight(m[1]));
   };
 
-  it('there are four figure rows, one per document 03 label', () => {
+  it('there is one figure row per label, in order', () => {
     expect(figureValues()).toHaveLength(HOME_FIGURE_LABELS.length);
   });
 
-  it('the three count figures render as numbers and match the corpus', () => {
-    const [endpoints, clusters, spread] = figureValues();
+  it('the four count figures render as numbers and match the corpus', () => {
+    const [endpoints, screened, clusters, spread] = figureValues();
 
     expect(endpoints, 'endpoints observed is not a bare number').toMatch(/^\d+$/);
     expect(Number(endpoints)).toBe(corpus.stats.endpoints_observed);
+
+    // Observed is the paid subset of screened. A build where the two are equal
+    // is only honest if every screened endpoint was in fact paid, so the
+    // relationship is asserted rather than the two figures read independently.
+    expect(screened, 'endpoints screened is not a bare number').toMatch(/^\d+$/);
+    expect(Number(screened)).toBe(corpus.stats.endpoints_screened);
+    expect(
+      Number(endpoints) <= Number(screened),
+      'endpoints observed exceeds endpoints screened, which cannot happen: observed is a subset',
+    ).toBe(true);
 
     expect(clusters, 'clusters published is not a bare number').toMatch(/^\d+$/);
     expect(Number(clusters)).toBe(corpus.stats.clusters_published);
@@ -625,8 +642,9 @@ describe('D3 home page figures - document 03', () => {
     // ever ship." This test is meaningful only against the committed empty
     // state and is skipped once the corpus carries rows.
     if (corpus.stats.endpoints_observed !== 0) return;
-    const [endpoints, clusters, spread] = figureValues();
+    const [endpoints, screened, clusters, spread] = figureValues();
     expect(endpoints).toBe('0');
+    expect(screened).toBe('0');
     expect(clusters).toBe('0');
     expect(spread).toBe('0.00x');
   });
@@ -635,7 +653,7 @@ describe('D3 home page figures - document 03', () => {
     // Document 03 renders this row as {date}, not as a count. With
     // stats.last_probe_run null there is no date to render, and document 00
     // forbids inventing one.
-    const value = figureValues()[3];
+    const value = figureValues()[HOME_FIGURE_LABELS.indexOf('Last probe run')];
     const isDate = /^\d{4}-\d{2}-\d{2}/.test(value);
     const isHonestAbsence = /not yet run|no probe run/i.test(value);
     expect(

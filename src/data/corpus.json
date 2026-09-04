@@ -5,7 +5,8 @@
   "evidence_verified": true,
   "next_probe_run": null,
   "stats": {
-    "endpoints_observed": 1265,
+    "endpoints_observed": 122,
+    "endpoints_screened": 1265,
     "clusters_published": 0,
     "widest_spread_multiple": 0,
     "last_probe_run": "2026-09-04T12:14:03Z"
