@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://crosspeel.com/mcp/schemas/get_cluster.output.schema.json",
+  "title": "get_cluster output",
+  "type": "object",
+  "required": ["checked_at", "endpoint", "cluster", "reason", "coverage", "limits"],
+  "additionalProperties": false,
+  "properties": {
+    "checked_at": { "type": "string", "description": "When this response was assembled. ISO 8601 UTC." },
+    "endpoint": { "type": "string", "description": "The endpoint queried, normalised." },
+    "cluster": {
+      "description": "The group the endpoint was placed in, or null. null where the endpoint has not been observed, where no group was recorded, or where the recorded group did not reach moderate confidence. reason states which.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": [
+            "slug",
+            "capability",
+            "method_version",
+            "confidence",
+            "matched_fields",
+            "compared_fields",
+            "paired_observation_count",
+            "members",
+            "min_price_usd",
+            "min_price_observed_at",
+            "max_price_usd",
+            "max_price_observed_at",
+            "spread_multiple",
+            "published",
+            "evidence_url",
+            "last_updated"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "slug": { "type": "string" },
+            "capability": { "type": ["string", "null"] },
+            "method_version": {
+              "type": "string",
+              "description": "The clustering method that produced this group. Recorded so a later method change does not silently rewrite history."
+            },
+            "confidence": { "type": "string", "enum": ["high", "moderate"] },
+            "matched_fields": { "type": "integer", "minimum": 0 },
+            "compared_fields": { "type": "integer", "minimum": 0 },
+            "paired_observation_count": { "type": "integer", "minimum": 0 },
+            "members": {
+              "type": "array",
+              "description": "Every current member of the group, including the endpoint queried.",
+              "items": {
+                "type": "object",
+                "required": ["endpoint", "price_usd", "observed_at"],
+                "additionalProperties": false,
+                "properties": {
+                  "endpoint": { "type": "string" },
+                  "price_usd": { "type": ["number", "null"], "minimum": 0 },
+                  "observed_at": {
+                    "type": ["string", "null"],
+                    "description": "When the price was observed. null only where price_usd is also null."
+                  }
+                }
+              }
+            },
+            "min_price_usd": { "type": ["number", "null"], "minimum": 0 },
+            "min_price_observed_at": { "type": ["string", "null"] },
+            "max_price_usd": { "type": ["number", "null"], "minimum": 0 },
+            "max_price_observed_at": { "type": ["string", "null"] },
+            "spread_multiple": {
+              "type": ["number", "null"],
+              "description": "The highest recorded price divided by the lowest, to two decimal places."
+            },
+            "published": {
+              "type": "boolean",
+              "description": "Whether an evidence page has been published for this group."
+            },
+            "evidence_url": {
+              "type": ["string", "null"],
+              "description": "The public evidence page. null where nothing has been published for this group."
+            },
+            "last_updated": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "reason": {
+      "type": ["string", "null"],
+      "description": "Why no group is returned. null where a group is returned."
+    },
+    "coverage": { "$ref": "#/$defs/coverage" },
+    "limits": { "$ref": "#/$defs/limits" }
+  },
+  "$defs": {
+    "coverage": {
+      "type": "object",
+      "required": ["known", "unknown"],
+      "additionalProperties": false,
+      "description": "known is 1 where the endpoint has been observed, otherwise 0. unknown is the complement. Present on every response.",
+      "properties": {
+        "known": { "type": "integer", "minimum": 0 },
+        "unknown": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "limits": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": { "type": "string" },
+      "description": "What the method cannot see. The same four constraints on every response, every time."
+    }
+  }
+}

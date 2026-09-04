@@ -1,0 +1,83 @@
+{
+  "contract_version": "1.0.0",
+  "server": {
+    "name": "crosspeel",
+    "version": "0.1.0"
+  },
+  "protocol_versions": ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"],
+  "payment": {
+    "protocol": "x402",
+    "transport": "http",
+    "chain_id": "eip155:8453",
+    "chain_name": "base",
+    "asset": "USDC",
+    "pay_to": "0x9819BE816dAA1cEFFb3b9aeAda8cd1EE2477F13e",
+    "price_usd": {
+      "cached": null,
+      "live": null
+    },
+    "note": "Per-call prices are derived from measured data. No figure has been derived yet, so none is published here."
+  },
+  "tools": [
+    {
+      "name": "check_stack",
+      "title": "check a set of endpoints for duplication",
+      "description": "Reports which of the submitted endpoints returned matching responses when they were probed, what each one charges, and when each price was observed. Two to twelve endpoint urls. depth cached answers from the recorded corpus. depth live triggers a paid probe run, costs more, and takes longer. Every response carries coverage, so an absence of duplication can be told apart from an absence of data, and carries what the method cannot see.",
+      "outputSchema": "check_stack.output.schema.json",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "endpoints": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 2,
+            "maxItems": 12,
+            "description": "Two to twelve endpoint urls, http or https, no duplicates."
+          },
+          "depth": {
+            "type": "string",
+            "enum": ["cached", "live"],
+            "default": "cached",
+            "description": "cached answers from the recorded corpus. live triggers a probe run and adds to the corpus."
+          }
+        },
+        "required": ["endpoints"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_cluster",
+      "title": "return the group one endpoint was placed in",
+      "description": "Returns the group a single endpoint was placed in, where one was recorded: the other members, the price range with the date each price was observed, the spread multiple, the confidence, and the address of the evidence page. Returns no group where the endpoint has not been observed, where no group was recorded, or where the recorded group did not reach moderate confidence.",
+      "outputSchema": "get_cluster.output.schema.json",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "description": "An endpoint url as it would be called. The same url is returned as the identifier in the response."
+          }
+        },
+        "required": ["endpoint"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cheapest_equivalent",
+      "title": "return the cheapest recorded member of an endpoint group",
+      "description": "Returns the cheapest recorded member of the group a single endpoint was placed in, the price difference, and the date each price was observed. Returns nothing where no group was recorded, rather than an estimate.",
+      "outputSchema": "cheapest_equivalent.output.schema.json",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "description": "An endpoint url as it would be called. The same url is returned as the identifier in the response."
+          }
+        },
+        "required": ["endpoint"],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://crosspeel.com/mcp/schemas/cheapest_equivalent.output.schema.json",
+  "title": "cheapest_equivalent output",
+  "type": "object",
+  "required": [
+    "checked_at",
+    "endpoint",
+    "queried_price_usd",
+    "queried_price_observed_at",
+    "cheapest",
+    "price_difference_usd",
+    "price_difference_observed_at",
+    "multiple_vs_cheapest",
+    "confidence",
+    "reason",
+    "coverage",
+    "limits"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "checked_at": { "type": "string", "description": "When this response was assembled. ISO 8601 UTC." },
+    "endpoint": { "type": "string", "description": "The endpoint queried, normalised." },
+    "queried_price_usd": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "The most recently recorded price for the endpoint queried. null where none has been recorded."
+    },
+    "queried_price_observed_at": {
+      "type": ["string", "null"],
+      "description": "When that price was observed. null only where queried_price_usd is also null."
+    },
+    "cheapest": {
+      "description": "The cheapest recorded member of the group, other than the endpoint queried. null where no group was recorded, where the group did not reach moderate confidence, or where no other member has a recorded price. reason states which. Nothing is estimated.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["endpoint", "price_usd", "observed_at"],
+          "additionalProperties": false,
+          "properties": {
+            "endpoint": { "type": "string" },
+            "price_usd": { "type": "number", "minimum": 0 },
+            "observed_at": { "type": "string", "description": "When that price was observed." }
+          }
+        }
+      ]
+    },
+    "price_difference_usd": {
+      "type": ["number", "null"],
+      "description": "queried_price_usd minus the cheapest price. null where either price is absent."
+    },
+    "price_difference_observed_at": {
+      "type": ["string", "null"],
+      "description": "The later of the two dates the difference is computed from. The two prices were not necessarily observed on the same day."
+    },
+    "multiple_vs_cheapest": {
+      "type": ["number", "null"],
+      "description": "queried_price_usd divided by the cheapest price, to two decimal places."
+    },
+    "confidence": {
+      "type": ["string", "null"],
+      "enum": ["high", "moderate", null],
+      "description": "Confidence in the group the cheapest member was drawn from. null where no group is returned."
+    },
+    "reason": {
+      "type": ["string", "null"],
+      "description": "Why nothing is returned. null where a cheapest member is returned."
+    },
+    "coverage": { "$ref": "#/$defs/coverage" },
+    "limits": { "$ref": "#/$defs/limits" }
+  },
+  "$defs": {
+    "coverage": {
+      "type": "object",
+      "required": ["known", "unknown"],
+      "additionalProperties": false,
+      "description": "known is 1 where the endpoint has been observed, otherwise 0. unknown is the complement. Present on every response.",
+      "properties": {
+        "known": { "type": "integer", "minimum": 0 },
+        "unknown": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "limits": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": { "type": "string" },
+      "description": "What the method cannot see. The same four constraints on every response, every time."
+    }
+  }
+}

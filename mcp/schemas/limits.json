@@ -1,0 +1,11 @@
+{
+  "title": "What the method cannot see",
+  "description": "These four constraints are carried in every tool response, every time. They cost a few hundred bytes and they are the difference between a measurement and a claim.",
+  "method_version": "v1",
+  "limits": [
+    "Two operators independently using the same upstream vendor will cluster. That is a shared dependency rather than one operator sourcing from the other, and Crosspeel cannot distinguish the two cases from the outside.",
+    "Two operators running the same open-source template will cluster.",
+    "An operator who deliberately randomises key order and error wording will not cluster, and Crosspeel will not detect that they are avoiding detection.",
+    "Nothing here observes ownership, contracts, or intent. The findings are about responses, not companies."
+  ]
+}

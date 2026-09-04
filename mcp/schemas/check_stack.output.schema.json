@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://crosspeel.com/mcp/schemas/check_stack.output.schema.json",
+  "title": "check_stack output",
+  "description": "Every field is a record of what was observed. coverage and limits are present on every response, without exception.",
+  "type": "object",
+  "required": [
+    "checked_at",
+    "depth",
+    "groups",
+    "unmatched",
+    "unmatched_reasons",
+    "prices",
+    "cheapest_in_group",
+    "coverage",
+    "limits"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "checked_at": {
+      "type": "string",
+      "description": "When this response was assembled. ISO 8601 UTC. Not the date the underlying observations were taken - those are on each price."
+    },
+    "depth": {
+      "type": "string",
+      "enum": ["cached", "live"],
+      "description": "The depth the response was answered at, echoed back."
+    },
+    "groups": {
+      "type": "array",
+      "description": "One entry per group into which two or more of the submitted endpoints were placed. A group is an agreement between responses. It is not a statement about the operators.",
+      "items": {
+        "type": "object",
+        "required": ["endpoint_ids", "matched_fields", "compared_fields", "confidence"],
+        "additionalProperties": false,
+        "properties": {
+          "endpoint_ids": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 2,
+            "description": "The submitted endpoint urls placed in this group. The url is the identifier."
+          },
+          "matched_fields": { "type": "integer", "minimum": 0 },
+          "compared_fields": { "type": "integer", "minimum": 0 },
+          "confidence": {
+            "type": "string",
+            "enum": ["high", "moderate"],
+            "description": "Groups below moderate are never returned. They appear in unmatched with a reason."
+          }
+        }
+      }
+    },
+    "unmatched": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Submitted endpoints not placed in any returned group. This includes endpoints never observed, so read coverage before drawing a conclusion from it."
+    },
+    "unmatched_reasons": {
+      "type": "array",
+      "description": "Why each unmatched endpoint is unmatched. An absence of duplication and an absence of data are different results.",
+      "items": {
+        "type": "object",
+        "required": ["endpoint", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "endpoint": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "prices": {
+      "type": "array",
+      "description": "The most recently recorded price for each submitted endpoint that has one. An endpoint absent from this list has no recorded price.",
+      "items": {
+        "type": "object",
+        "required": ["endpoint", "price_usd", "multiple_vs_cheapest", "observed_at"],
+        "additionalProperties": false,
+        "properties": {
+          "endpoint": { "type": "string" },
+          "price_usd": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Recorded price per call in USD, carried at the precision it was recorded at rather than rounded to two places, because prices below one cent are common."
+          },
+          "multiple_vs_cheapest": {
+            "type": ["number", "null"],
+            "description": "This price divided by the cheapest price in the same returned group, to two decimal places. 1.00 for an endpoint in no returned group."
+          },
+          "observed_at": {
+            "type": "string",
+            "description": "When this price was observed. Present on every price, without exception."
+          }
+        }
+      }
+    },
+    "cheapest_in_group": {
+      "type": "array",
+      "description": "The cheapest recorded member of each returned group.",
+      "items": {
+        "type": "object",
+        "required": ["group", "endpoint"],
+        "additionalProperties": false,
+        "properties": {
+          "group": { "type": "integer", "minimum": 0, "description": "Index into groups." },
+          "endpoint": { "type": "string" }
+        }
+      }
+    },
+    "coverage": { "$ref": "#/$defs/coverage" },
+    "limits": { "$ref": "#/$defs/limits" }
+  },
+  "$defs": {
+    "coverage": {
+      "type": "object",
+      "required": ["known", "unknown"],
+      "additionalProperties": false,
+      "description": "known counts the submitted endpoints that have been observed. unknown counts those that have not. Present on every response.",
+      "properties": {
+        "known": { "type": "integer", "minimum": 0 },
+        "unknown": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "limits": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": { "type": "string" },
+      "description": "What the method cannot see. The same four constraints on every response, every time."
+    }
+  }
+}
