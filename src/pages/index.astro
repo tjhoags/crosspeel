@@ -69,7 +69,7 @@ const stats = corpus.stats;
 const dateOnly = (value?: string | null) =>
   typeof value === 'string' && value.length >= 10 ? value.slice(0, 10) : null;
 
-const observedThrough = dateOnly(corpus.observed_through);
+const observedThrough = corpus.observed_through;
 
 // The featured pane. The export may carry the two endpoints as a members array
 // or as left and right; both are read so a shape change on the engine side does

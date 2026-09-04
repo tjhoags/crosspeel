@@ -154,7 +154,7 @@ const description = claim;
             const diverges = typeof m.multiple_vs_min === 'number' && m.multiple_vs_min > 1;
             return (
               <tr>
-                <th scope="row" class="cp-mono cp-host"><a href={`/endpoints/${m.slug}`}>{m.hostname}</a></th>
+                <th scope="row" class="cp-mono cp-host" data-captured="hostname"><a href={`/endpoints/${m.slug}`}>{m.hostname}</a></th>
                 <td>{m.operator_name || 'not advertised'}</td>
                 <td class="cp-mono">{price === null ? 'not yet observed' : `$${price}`}</td>
                 <td class={diverges ? 'cp-mono cp-delta' : 'cp-mono'}>{mult === null ? '-' : `${mult}x`}</td>

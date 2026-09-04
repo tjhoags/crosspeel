@@ -30,7 +30,7 @@ const corpus = corpusJson as unknown as Corpus;
 const dateOnly = (value?: string | null) =>
   typeof value === 'string' && value.length >= 10 ? value.slice(0, 10) : null;
 
-const observedThrough = dateOnly(corpus.observed_through);
+const observedThrough = corpus.observed_through;
 
 const disputes = [...(corpus.disputes ?? [])].sort((a, b) =>
   String(b.received_at ?? '').localeCompare(String(a.received_at ?? '')),

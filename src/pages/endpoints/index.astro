@@ -61,8 +61,10 @@ const description = 'Every endpoint Crosspeel has called and measured, with its 
             const price = e.latest_observed_price ? usd(e.latest_observed_price.amount_usd) : null;
             return (
               <tr>
-                <th scope="row" class="cp-mono cp-host"><a href={`/endpoints/${e.slug}`}>{e.hostname}</a></th>
-                <td>{e.capability || 'not advertised'}</td>
+                <th scope="row" class="cp-mono cp-host" data-captured="hostname"><a href={`/endpoints/${e.slug}`}>{e.hostname}</a></th>
+                <td>{e.capability
+                  ? <span class="cp-mono" data-captured="advertised">{e.capability}</span>
+                  : 'not advertised'}</td>
                 <td>{e.source_directory}</td>
                 <td class="cp-mono">{e.observation_count}</td>
                 <td class="cp-mono">{price === null ? 'not yet observed' : `$${price}`}</td>

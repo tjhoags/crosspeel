@@ -31,7 +31,7 @@ const description = `What Crosspeel observed at ${endpoint.hostname}: ${endpoint
 ---
 
 <Layout title={title} description={description} observed={newest || endpoint.last_seen}>
-  <h1 class="cp-display cp-mono-display">{endpoint.hostname}</h1>
+  <h1 class="cp-display cp-mono-display" data-captured="hostname">{endpoint.hostname}</h1>
 
   <p class="cp-lede">
     {endpoint.observation_count} observations recorded.
@@ -45,10 +45,14 @@ const description = `What Crosspeel observed at ${endpoint.hostname}: ${endpoint
       Read from a directory and written down with its source and date. Not measured. <span class="cp-mono">provenance: recorded</span>
     </p>
     <dl class="cp-facts">
-      <div><dt>url</dt><dd class="cp-mono cp-break">{endpoint.url}</dd></div>
-      <div><dt>hostname</dt><dd class="cp-mono">{endpoint.hostname}</dd></div>
-      <div><dt>operator</dt><dd>{endpoint.operator_name || 'not advertised'}</dd></div>
-      <div><dt>capability</dt><dd>{endpoint.capability || 'not advertised'}</dd></div>
+      <div><dt>url</dt><dd class="cp-mono cp-break" data-captured="url">{endpoint.url}</dd></div>
+      <div><dt>hostname</dt><dd class="cp-mono" data-captured="hostname">{endpoint.hostname}</dd></div>
+      <div><dt>operator</dt><dd>{endpoint.operator_name
+        ? <span class="cp-mono" data-captured="advertised">{endpoint.operator_name}</span>
+        : 'not advertised'}</dd></div>
+      <div><dt>capability</dt><dd>{endpoint.capability
+        ? <span class="cp-mono" data-captured="advertised">{endpoint.capability}</span>
+        : 'not advertised'}</dd></div>
       <div><dt>capability tag</dt><dd class="cp-mono">{endpoint.tag || 'unclassified'}</dd></div>
       <div><dt>source directory</dt><dd>{endpoint.source_directory}</dd></div>
     </dl>

@@ -99,7 +99,15 @@ function stripInert(html) {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<!--[\s\S]*?-->/g, ' ');
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    // Anything marked data-captured is verbatim machine output - an operator's
+    // own advertised description, captured and stored unmodified per document 02.
+    // Document 07 governs what Crosspeel WRITES. An operator's em dash, or their
+    // use of a word Crosspeel will not use, is a fact about their listing, and
+    // rewriting it to satisfy a house style rule would be falsifying a captured
+    // value. It is rendered in mono for exactly this reason: the reader can see
+    // it is captured rather than written.
+    .replace(/<([a-z]+)[^>]*\bdata-captured\b[^>]*>[\s\S]*?<\/\1>/gi, ' ');
 }
 
 // A block-level boundary is a word boundary; an inline one is not. A sentence
@@ -554,7 +562,11 @@ describe('D3 voice - document 07', () => {
   });
 
   it('no built page contains an em dash', () => {
-    const hits = PRODUCT_PAGES().filter((f) => raw.get(f).includes(EM_DASH));
+    // Crosspeel's own copy only. A value marked data-captured is an operator's
+    // advertised text, stored verbatim per document 02 and rendered in mono so a
+    // reader can see it is captured. Rewriting their punctuation to satisfy a
+    // house style rule would falsify a captured value.
+    const hits = PRODUCT_PAGES().filter((f) => stripInert(raw.get(f)).includes(EM_DASH));
     expect(hits, `em dash found in: ${hits.join(', ')}. The house rule is a spaced hyphen.`)
       .toEqual([]);
   });
