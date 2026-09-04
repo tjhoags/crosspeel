@@ -1,0 +1,159 @@
+---
+// The evidence block - document 01, "Components".
+// A captured raw response, mono, on the field surface, with its SHA-256 and
+// observation timestamp in micro beneath it, and a permalink to the stored
+// artifact. The body may be passed as a prop or supplied as the default slot.
+
+export interface EvidenceRecord {
+  observation_id?: string | number | null;
+  endpoint_id?: string | number | null;
+  observed_at?: string | null;
+  status_code?: number | null;
+  body_sha256?: string | null;
+  r2_body_key?: string | null;
+  r2_headers_key?: string | null;
+  permalink?: string | null;
+}
+
+export interface Props {
+  evidence?: EvidenceRecord | null;
+  body?: string | null;
+  hostname?: string | null;
+}
+
+const { evidence = null, body = null, hostname = null } = Astro.props as Props;
+const hasSlot = Astro.slots.has('default');
+const renderable = Boolean(evidence && (body || hasSlot || evidence.body_sha256 || evidence.permalink));
+
+const hash = renderable ? evidence!.body_sha256 || null : null;
+const observedAt = renderable ? evidence!.observed_at || null : null;
+const permalink = renderable ? evidence!.permalink || null : null;
+const statusCode = renderable && typeof evidence!.status_code === 'number' ? evidence!.status_code : null;
+---
+
+{renderable && (
+  <figure class="evidence">
+    {(hostname || statusCode !== null) && (
+      <figcaption class="evidence-head">
+        {hostname && <span class="evidence-host">{hostname}</span>}
+        {statusCode !== null && <span class="evidence-status">status {statusCode}</span>}
+      </figcaption>
+    )}
+
+    {(body || hasSlot) && (
+      <pre class="evidence-body"><code>{body ? body : <slot />}</code></pre>
+    )}
+
+    <div class="evidence-meta">
+      {hash && (
+        <p class="meta-line">
+          <span class="meta-label">sha-256</span>
+          <span class="meta-value">{hash}</span>
+        </p>
+      )}
+      {observedAt && (
+        <p class="meta-line">
+          <span class="meta-label">observed</span>
+          <span class="meta-value">{observedAt}</span>
+        </p>
+      )}
+      {permalink && (
+        <p class="meta-line">
+          <span class="meta-label">artifact</span>
+          <a class="meta-value" href={permalink} rel="noopener">{permalink}</a>
+        </p>
+      )}
+    </div>
+  </figure>
+)}
+
+<style>
+  .evidence {
+    margin: 0;
+    border: var(--border, 1px solid var(--rule));
+    background: var(--page);
+  }
+
+  .evidence-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    padding: 8px 16px;
+    border-bottom: var(--border, 1px solid var(--rule));
+  }
+
+  .evidence-host {
+    font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
+    font-size: var(--size-data, 0.875rem);
+    line-height: var(--leading-data, 1.40);
+    color: var(--ink);
+  }
+
+  .evidence-status {
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-small, 0.875rem);
+    line-height: var(--leading-small, 1.45);
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .evidence-body {
+    margin: 0;
+    padding: 16px;
+    background: var(--field);
+    overflow-x: auto;
+  }
+
+  .evidence-body code {
+    font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
+    font-size: var(--size-data, 0.875rem);
+    line-height: var(--leading-data, 1.40);
+    color: var(--ink);
+    white-space: pre;
+  }
+
+  .evidence-meta {
+    display: grid;
+    gap: 8px;
+    padding: 8px 16px 16px;
+  }
+
+  .meta-line {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .meta-label {
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-micro, 0.75rem);
+    line-height: var(--leading-micro, 1.40);
+    color: var(--ink-2);
+    min-width: 5rem;
+  }
+
+  .meta-value {
+    font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
+    font-size: var(--size-micro, 0.75rem);
+    line-height: var(--leading-micro, 1.40);
+    color: var(--ink-2);
+    word-break: break-all;
+  }
+
+  a.meta-value {
+    color: var(--ink);
+    text-decoration: none;
+    box-shadow: inset 0 -1px 0 0 var(--rule);
+  }
+
+  a.meta-value:hover {
+    box-shadow: inset 0 -1px 0 0 var(--ink);
+  }
+
+  @media (max-width: 640px) {
+    .meta-label {
+      min-width: 0;
+    }
+  }
+</style>

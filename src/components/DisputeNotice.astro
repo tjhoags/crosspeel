@@ -1,0 +1,146 @@
+---
+// The dispute notice - document 01, "Components", and document 03, "/clusters/{slug}".
+// The notice appears above the finding, never below it. The finding stays
+// published unchanged next to it, so a page may either place this component
+// before the finding or pass the finding as the default slot.
+
+export interface DisputeRecord {
+  id?: string | number | null;
+  received_at?: string | null;
+  claimant?: string | null;
+  claim?: string | null;
+  response?: string | null;
+  outcome?: string | null;
+}
+
+export interface Props {
+  dispute?: DisputeRecord | null;
+  disputes?: DisputeRecord[] | null;
+}
+
+const { dispute = null, disputes = null } = Astro.props as Props;
+
+const list = (Array.isArray(disputes) ? disputes : []).concat(dispute ? [dispute] : []);
+const notices = list.filter((entry) => entry && (entry.claim || entry.outcome || entry.received_at));
+const renderable = notices.length > 0;
+
+const dateOnly = (value?: string | null) =>
+  typeof value === 'string' && value.length >= 10 ? value.slice(0, 10) : null;
+---
+
+{renderable &&
+  notices.map((notice) => (
+    <aside class="dispute" aria-label="Dispute notice">
+      <p class="dispute-head">
+        {dateOnly(notice.received_at)
+          ? `Dispute received ${dateOnly(notice.received_at)}. The finding below is published unchanged.`
+          : 'Dispute received. The finding below is published unchanged.'}
+      </p>
+
+      <dl class="dispute-body">
+        {notice.claimant && (
+          <div class="dispute-pair">
+            <dt>from</dt>
+            <dd>{notice.claimant}</dd>
+          </div>
+        )}
+        {notice.claim && (
+          <div class="dispute-pair">
+            <dt>claim</dt>
+            <dd>{notice.claim}</dd>
+          </div>
+        )}
+        {notice.response && (
+          <div class="dispute-pair">
+            <dt>response</dt>
+            <dd>{notice.response}</dd>
+          </div>
+        )}
+        {notice.outcome && (
+          <div class="dispute-pair">
+            <dt>outcome</dt>
+            <dd>{notice.outcome}</dd>
+          </div>
+        )}
+      </dl>
+
+      <p class="dispute-foot">
+        Every dispute received is recorded at <a href="/disputes">/disputes</a>, whatever the outcome.
+      </p>
+    </aside>
+  ))}
+
+<slot />
+
+<style>
+  .dispute {
+    border: 1px solid var(--ink-2);
+    padding: 16px;
+    margin-bottom: 24px;
+    background: var(--page);
+  }
+
+  .dispute-head {
+    margin: 0 0 16px;
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-body, 1rem);
+    line-height: var(--leading-body, 1.55);
+    font-weight: 600;
+    color: var(--ink);
+    max-width: 68ch;
+  }
+
+  .dispute-body {
+    margin: 0;
+    display: grid;
+    gap: 8px;
+  }
+
+  .dispute-pair {
+    display: grid;
+    grid-template-columns: 7rem 1fr;
+    gap: 16px;
+    align-items: baseline;
+  }
+
+  .dispute-pair dt {
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-small, 0.875rem);
+    line-height: var(--leading-small, 1.45);
+    color: var(--ink-2);
+  }
+
+  .dispute-pair dd {
+    margin: 0;
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-body, 1rem);
+    line-height: var(--leading-body, 1.55);
+    color: var(--ink);
+    max-width: 68ch;
+  }
+
+  .dispute-foot {
+    margin: 16px 0 0;
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-small, 0.875rem);
+    line-height: var(--leading-small, 1.45);
+    color: var(--ink-2);
+  }
+
+  .dispute-foot a {
+    color: var(--ink);
+    text-decoration: none;
+    box-shadow: inset 0 -1px 0 0 var(--rule);
+  }
+
+  .dispute-foot a:hover {
+    box-shadow: inset 0 -1px 0 0 var(--ink);
+  }
+
+  @media (max-width: 640px) {
+    .dispute-pair {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+  }
+</style>

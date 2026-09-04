@@ -1,0 +1,24 @@
+---
+// The confidence tag - document 01, "Components".
+// Inline text, not a pill and not a badge. It reads as a field because it is one.
+
+export interface Props {
+  confidence?: string | null;
+}
+
+const { confidence = null } = Astro.props as Props;
+const value = typeof confidence === 'string' ? confidence.trim().toLowerCase() : '';
+const renderable = value.length > 0;
+---
+
+{renderable && <span class="confidence">confidence: {value}</span>}
+
+<style>
+  .confidence {
+    font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
+    font-size: var(--size-data, 0.875rem);
+    line-height: var(--leading-data, 1.40);
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+</style>

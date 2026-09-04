@@ -1,0 +1,223 @@
+---
+// Global chrome - document 03, "Global chrome".
+// Header: wordmark left, five nav items right, one hairline rule beneath.
+// Footer: disputes, about, method, the repository, the dispute address, and one
+// operator line. No byline anywhere above the footer.
+import '../styles/tokens.css';
+import '../styles/base.css';
+import baseCss from '../styles/base.css?raw';
+
+export interface Props {
+  title: string;
+  description?: string;
+  observed?: string | null;
+  width?: 'prose' | 'full';
+}
+
+const {
+  title,
+  description = 'Crosspeel measures whether independently branded machine-payable API endpoints are actually independent.',
+  observed = null,
+  width = 'full',
+} = Astro.props as Props;
+
+const nav = [
+  { href: '/clusters', label: 'Clusters' },
+  { href: '/endpoints', label: 'Endpoints' },
+  { href: '/method', label: 'Method' },
+  { href: '/bakeoff', label: 'Bakeoff' },
+  { href: '/mcp', label: 'MCP' },
+];
+
+const here = (Astro.url.pathname.replace(/\/+$/, '') || '/');
+const isCurrent = (href: string) => here === href || here.startsWith(href + '/');
+
+// Fonts are self-hosted and preloaded. The faces are declared in base.css, which
+// the token step owns, so the declarations are read at build time and exactly the
+// files they name are preloaded. A stylesheet that declares no face preloads
+// nothing rather than emitting a request that 404s.
+const fontPreloads: string[] = [
+  ...new Set(
+    [...baseCss.matchAll(/url\((["']?)([^"')]+\.woff2)\1\)/g)].map((match) => match[2]),
+  ),
+].sort();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} - Crosspeel</title>
+    <meta name="description" content={description} />
+    {observed ? <meta name="observed" content={observed} /> : null}
+    <link rel="canonical" href={new URL(Astro.url.pathname, 'https://crosspeel.com').href} />
+    {fontPreloads.map((href) => (
+      <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />
+    ))}
+    <link rel="alternate" type="application/rss+xml" title="Crosspeel clusters" href="/clusters/rss.xml" />
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="chrome-head">
+      <div class="chrome-inner">
+        <a class="wordmark" href="/">Crosspeel</a>
+        <nav class="chrome-nav" aria-label="Primary">
+          <ul>
+            {nav.map((item) => (
+              <li>
+                <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" class:list={['chrome-main', width === 'prose' ? 'is-prose' : 'is-full']}>
+      <slot />
+    </main>
+
+    <footer class="chrome-foot">
+      <div class="chrome-inner chrome-foot-inner">
+        <nav class="foot-nav" aria-label="Secondary">
+          <ul>
+            <li><a href="/disputes">Disputes</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/method">Method</a></li>
+            <li><a href="https://github.com/tjhoags/crosspeel" rel="noopener">GitHub</a></li>
+          </ul>
+        </nav>
+        <p class="foot-address"><a href="mailto:disputes@crosspeel.com">disputes@crosspeel.com</a></p>
+        <p class="foot-operator">
+          Crosspeel is built and operated by <a href="https://tomhogan.io" rel="noopener">Tom Hogan</a>.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .chrome-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .chrome-head {
+    border-bottom: var(--border, 1px solid var(--rule));
+  }
+
+  .chrome-head .chrome-inner {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 24px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+
+  .wordmark {
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-h3, 1.125rem);
+    line-height: var(--leading-h3, 1.30);
+    font-weight: 600;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .chrome-nav ul,
+  .foot-nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+
+  .chrome-nav a,
+  .foot-nav a,
+  .foot-address a,
+  .foot-operator a {
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-small, 0.875rem);
+    line-height: var(--leading-small, 1.45);
+    color: var(--ink-2);
+    text-decoration: none;
+  }
+
+  .chrome-nav a:hover,
+  .foot-nav a:hover,
+  .foot-address a:hover,
+  .foot-operator a:hover {
+    color: var(--ink);
+  }
+
+  .chrome-nav a[aria-current='page'] {
+    color: var(--ink);
+    box-shadow: inset 0 -1px 0 0 var(--ink);
+  }
+
+  .chrome-main {
+    margin: 0 auto;
+    padding: 40px 24px 64px;
+  }
+
+  .chrome-main.is-full {
+    max-width: 1200px;
+  }
+
+  .chrome-main.is-prose {
+    max-width: 68ch;
+  }
+
+  .chrome-foot {
+    border-top: var(--border, 1px solid var(--rule));
+  }
+
+  .chrome-foot-inner {
+    padding-top: 24px;
+    padding-bottom: 40px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .foot-address,
+  .foot-operator {
+    margin: 0;
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-small, 0.875rem);
+    line-height: var(--leading-small, 1.45);
+    color: var(--ink-2);
+  }
+
+  .foot-operator a {
+    color: var(--ink);
+    box-shadow: inset 0 -1px 0 0 var(--rule);
+  }
+
+  @media (max-width: 640px) {
+    .chrome-head .chrome-inner {
+      display: grid;
+      gap: 8px;
+    }
+
+    .chrome-nav ul,
+    .foot-nav ul {
+      gap: 16px;
+    }
+
+    .chrome-inner {
+      padding: 0 16px;
+    }
+
+    .chrome-main {
+      padding: 24px 16px 40px;
+    }
+  }
+</style>

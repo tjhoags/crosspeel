@@ -1,0 +1,181 @@
+---
+// The price table - document 01, "Components", and document 03, "/clusters/{slug}".
+// Each member, its observed price, its multiple against the cluster minimum, and
+// the date of that observation. Tabular figures so a reader can see a spread.
+// A price that differs from the cluster minimum is a divergence and carries the
+// only colour in the table. A price at the minimum is neutral.
+
+export interface PriceMember {
+  endpoint_id?: string | number | null;
+  hostname: string;
+  url?: string | null;
+  operator_name?: string | null;
+  slug?: string | null;
+  price_usd?: number | null;
+  multiple_vs_min?: number | null;
+  observed_at?: string | null;
+}
+
+export interface Props {
+  members?: PriceMember[] | null;
+  minPrice?: number | null;
+  caption?: string | null;
+}
+
+const { members = null, minPrice = null, caption = null } = Astro.props as Props;
+
+const rows = (Array.isArray(members) ? members : []).filter((member) => member && member.hostname);
+const renderable = rows.length > 0;
+
+const prices = rows
+  .map((member) => member.price_usd)
+  .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+
+const minimum =
+  typeof minPrice === 'number' && Number.isFinite(minPrice)
+    ? minPrice
+    : prices.length > 0
+      ? Math.min(...prices)
+      : null;
+
+const money = (value?: number | null) =>
+  typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : null;
+
+const dateOnly = (value?: string | null) =>
+  typeof value === 'string' && value.length >= 10 ? value.slice(0, 10) : null;
+
+const multipleOf = (member: PriceMember) => {
+  if (typeof member.multiple_vs_min === 'number' && Number.isFinite(member.multiple_vs_min)) {
+    return member.multiple_vs_min;
+  }
+  if (
+    typeof member.price_usd === 'number' &&
+    Number.isFinite(member.price_usd) &&
+    typeof minimum === 'number' &&
+    minimum > 0
+  ) {
+    return member.price_usd / minimum;
+  }
+  return null;
+};
+---
+
+{renderable && (
+  <div class="price-scroll">
+    <table class="price-table">
+      {caption && <caption>{caption}</caption>}
+      <thead>
+        <tr>
+          <th scope="col">endpoint</th>
+          <th scope="col">observed price</th>
+          <th scope="col">multiple of minimum</th>
+          <th scope="col">observed</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((member) => {
+          const price = money(member.price_usd);
+          const ratio = multipleOf(member);
+          const diverges =
+            typeof ratio === 'number' && Number.isFinite(ratio) ? Number(ratio.toFixed(2)) > 1 : false;
+          return (
+            <tr class:list={['price-row', diverges ? 'is-divergent' : 'is-baseline']}>
+              <th scope="row" class="cell-endpoint">
+                {member.slug ? (
+                  <a href={`/endpoints/${member.slug}`}>{member.hostname}</a>
+                ) : (
+                  member.hostname
+                )}
+              </th>
+              <td class="cell-price">{price ? `${price} USD` : 'not observed'}</td>
+              <td class="cell-multiple">
+                {typeof ratio === 'number' && Number.isFinite(ratio) ? `${ratio.toFixed(2)}x` : 'not observed'}
+              </td>
+              <td class="cell-date">{dateOnly(member.observed_at) || 'not observed'}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+)}
+
+<style>
+  .price-scroll {
+    overflow-x: auto;
+  }
+
+  .price-table {
+    width: 100%;
+    min-width: 32rem;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .price-table caption {
+    caption-side: top;
+    text-align: left;
+    padding-bottom: 8px;
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-small, 0.875rem);
+    line-height: var(--leading-small, 1.45);
+    color: var(--ink-2);
+  }
+
+  .price-table thead th {
+    padding: 8px 16px 8px 0;
+    border-bottom: var(--border, 1px solid var(--rule));
+    text-align: left;
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-small, 0.875rem);
+    line-height: var(--leading-small, 1.45);
+    font-weight: 400;
+    color: var(--ink-2);
+  }
+
+  .price-row > * {
+    padding: 8px 16px 8px 0;
+    border-bottom: var(--border, 1px solid var(--rule));
+    text-align: left;
+    vertical-align: baseline;
+    font-weight: 400;
+  }
+
+  .cell-endpoint,
+  .cell-price {
+    font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
+    font-size: var(--size-data, 0.875rem);
+    line-height: var(--leading-data, 1.40);
+    color: var(--ink);
+  }
+
+  .cell-endpoint a {
+    color: var(--ink);
+    text-decoration: none;
+    box-shadow: inset 0 -1px 0 0 var(--rule);
+  }
+
+  .cell-endpoint a:hover {
+    box-shadow: inset 0 -1px 0 0 var(--ink);
+  }
+
+  .cell-multiple,
+  .cell-date {
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-small, 0.875rem);
+    line-height: var(--leading-small, 1.45);
+    color: var(--ink);
+  }
+
+  .cell-date {
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+
+  /* Divergence from the cluster minimum, and nothing else, carries colour. */
+  .price-row.is-divergent .cell-price,
+  .price-row.is-divergent .cell-multiple {
+    background: var(--delta-wash);
+    color: var(--delta);
+  }
+</style>

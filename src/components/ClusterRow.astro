@@ -1,0 +1,124 @@
+---
+// The cluster row - document 01, "Components". The index unit.
+// Renders one <tr>. Place inside the <tbody> of a table whose columns are, in
+// order: cluster, members, capability, observed price range, spread, last
+// observed, confidence.
+import ConfidenceTag from './ConfidenceTag.astro';
+
+export interface ClusterRowData {
+  slug: string;
+  capability?: string | null;
+  confidence?: string | null;
+  min_price_usd?: number | null;
+  max_price_usd?: number | null;
+  spread_multiple?: number | null;
+  last_updated?: string | null;
+  members?: unknown[] | null;
+  member_count?: number | null;
+}
+
+export interface Props {
+  cluster?: ClusterRowData | null;
+}
+
+const { cluster = null } = Astro.props as Props;
+const renderable = Boolean(cluster && cluster.slug);
+
+const money = (value?: number | null) =>
+  typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : null;
+
+const multiple = (value?: number | null) =>
+  typeof value === 'number' && Number.isFinite(value) ? `${value.toFixed(2)}x` : null;
+
+const dateOnly = (value?: string | null) =>
+  typeof value === 'string' && value.length >= 10 ? value.slice(0, 10) : null;
+
+const memberCount = renderable
+  ? typeof cluster!.member_count === 'number'
+    ? cluster!.member_count
+    : Array.isArray(cluster!.members)
+      ? cluster!.members.length
+      : null
+  : null;
+
+const minPrice = renderable ? money(cluster!.min_price_usd) : null;
+const maxPrice = renderable ? money(cluster!.max_price_usd) : null;
+const priceRange = minPrice && maxPrice ? `${minPrice} to ${maxPrice} USD` : minPrice ? `${minPrice} USD` : null;
+const spread = renderable ? multiple(cluster!.spread_multiple) : null;
+const lastObserved = renderable ? dateOnly(cluster!.last_updated) : null;
+---
+
+{renderable && (
+  <tr class="cluster-row">
+    <td class="cell-id">
+      <a href={`/clusters/${cluster!.slug}`}>{cluster!.slug}</a>
+    </td>
+    <td class="cell-count">{memberCount === null ? 'not recorded' : memberCount}</td>
+    <td class="cell-capability">{cluster!.capability || 'not recorded'}</td>
+    <td class="cell-price">{priceRange || 'not observed'}</td>
+    <td class="cell-spread">{spread || 'not observed'}</td>
+    <td class="cell-date">{lastObserved || 'not observed'}</td>
+    <td class="cell-confidence"><ConfidenceTag confidence={cluster!.confidence} /></td>
+  </tr>
+)}
+
+<style>
+  .cluster-row > * {
+    padding: 16px 16px 16px 0;
+    border-bottom: var(--border, 1px solid var(--rule));
+    vertical-align: baseline;
+    text-align: left;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* No zebra striping and no hover background. The rule shifts, nothing else. */
+  .cluster-row:hover > * {
+    border-bottom-color: var(--ink-2);
+  }
+
+  .cell-id a {
+    font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
+    font-size: var(--size-data, 0.875rem);
+    line-height: var(--leading-data, 1.40);
+    color: var(--ink);
+    text-decoration: none;
+    box-shadow: inset 0 -1px 0 0 var(--rule);
+  }
+
+  .cell-id a:hover {
+    box-shadow: inset 0 -1px 0 0 var(--ink);
+  }
+
+  .cell-count,
+  .cell-capability,
+  .cell-spread,
+  .cell-date {
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-small, 0.875rem);
+    line-height: var(--leading-small, 1.45);
+    color: var(--ink);
+  }
+
+  .cell-date {
+    color: var(--ink-2);
+  }
+
+  /* Prices are captured values, so they are set in mono. */
+  .cell-price {
+    font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
+    font-size: var(--size-data, 0.875rem);
+    line-height: var(--leading-data, 1.40);
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 640px) {
+    .cluster-row > * {
+      padding: 8px 8px 8px 0;
+    }
+
+    .cell-price {
+      white-space: normal;
+    }
+  }
+</style>

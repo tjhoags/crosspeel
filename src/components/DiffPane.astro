@@ -1,0 +1,331 @@
+---
+// The diff pane - document 01, "Components", and document 03, "Home".
+// Locked two-column alignment. One endpoint per column, one row per captured
+// field. Matching values are neutral. Diverging values carry the only colour on
+// the page. The matching rows settle into alignment over 240ms on load, and that
+// is the only motion on the site.
+
+export interface DiffEndpoint {
+  endpoint_id: string | number;
+  hostname: string;
+  operator_name?: string | null;
+  url?: string | null;
+}
+
+export interface DiffField {
+  field: string;
+  values: Record<string, unknown>;
+  identical: boolean;
+}
+
+export interface Props {
+  left?: DiffEndpoint | null;
+  right?: DiffEndpoint | null;
+  fields?: DiffField[] | null;
+  matchedFields?: number | null;
+  comparedFields?: number | null;
+  observedAt?: string | null;
+  clusterSlug?: string | null;
+}
+
+const {
+  left = null,
+  right = null,
+  fields = null,
+  matchedFields = null,
+  comparedFields = null,
+  observedAt = null,
+  clusterSlug = null,
+} = Astro.props as Props;
+
+const rows = Array.isArray(fields) ? fields : [];
+const renderable = Boolean(left && right && rows.length > 0);
+
+const matched =
+  typeof matchedFields === 'number' ? matchedFields : rows.filter((row) => row.identical).length;
+const compared = typeof comparedFields === 'number' ? comparedFields : rows.length;
+
+const dateOnly = (value?: string | null) =>
+  typeof value === 'string' && value.length >= 10 ? value.slice(0, 10) : null;
+const observedDate = dateOnly(observedAt);
+
+// A key absent from the captured response is not the same observation as a key
+// present and null. The pane keeps that distinction visible.
+const read = (row: DiffField, endpoint: DiffEndpoint) => {
+  const key = String(endpoint.endpoint_id);
+  const present = Object.prototype.hasOwnProperty.call(row.values ?? {}, key);
+  const raw = present ? (row.values as Record<string, unknown>)[key] : undefined;
+  if (!present || raw === undefined) return { captured: false, text: 'not returned' };
+  if (raw === null) return { captured: true, text: 'null' };
+  if (typeof raw === 'number') return { captured: true, text: String(raw) };
+  if (typeof raw === 'string') return { captured: true, text: raw };
+  return { captured: true, text: JSON.stringify(raw) };
+};
+
+const columns: DiffEndpoint[] = renderable ? [left as DiffEndpoint, right as DiffEndpoint] : [];
+---
+
+{renderable && (
+  <section class="pane" aria-label="Field comparison">
+    <header class="pane-head">
+      <p class="pane-count">{matched} of {compared} fields identical</p>
+      {(observedDate || clusterSlug) && (
+        <p class="pane-meta">
+          {observedDate && <span>observed {observedDate}</span>}
+          {clusterSlug && <a href={`/clusters/${clusterSlug}`}>cluster {clusterSlug}</a>}
+        </p>
+      )}
+    </header>
+
+    <table class="pane-table">
+      <thead>
+        <tr>
+          <th scope="col" class="col-field">field</th>
+          {columns.map((endpoint) => (
+            <th scope="col" class="col-endpoint">
+              <span class="host">{endpoint.hostname}</span>
+              {endpoint.operator_name && <span class="operator">{endpoint.operator_name}</span>}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr class:list={['row', row.identical ? 'is-identical' : 'is-divergent']}>
+            <th scope="row" class="cell-field">{row.field}</th>
+            {columns.map((endpoint, index) => {
+              const value = read(row, endpoint);
+              return (
+                <td
+                  class:list={[
+                    'cell-value',
+                    index === 0 ? 'side-left' : 'side-right',
+                    value.captured ? 'is-captured' : 'is-absent',
+                  ]}
+                >
+                  <span class="cell-endpoint">{endpoint.hostname}</span>
+                  <span class="cell-text">{value.text}</span>
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+)}
+
+<style>
+  .pane {
+    border: var(--border, 1px solid var(--rule));
+    background: var(--page);
+  }
+
+  .pane-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px;
+    border-bottom: var(--border, 1px solid var(--rule));
+  }
+
+  .pane-count {
+    margin: 0;
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-h3, 1.125rem);
+    line-height: var(--leading-h3, 1.30);
+    font-weight: 600;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pane-meta {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-small, 0.875rem);
+    line-height: var(--leading-small, 1.45);
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pane-meta a {
+    color: var(--ink-2);
+    text-decoration: none;
+    box-shadow: inset 0 -1px 0 0 var(--rule);
+  }
+
+  .pane-meta a:hover {
+    color: var(--ink);
+  }
+
+  .pane-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .col-field,
+  .cell-field {
+    width: 15rem;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .col-field,
+  .col-endpoint {
+    padding: 8px 16px;
+    border-bottom: var(--border, 1px solid var(--rule));
+    text-align: left;
+    vertical-align: bottom;
+    font-weight: 400;
+  }
+
+  .col-field {
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-small, 0.875rem);
+    line-height: var(--leading-small, 1.45);
+    color: var(--ink-2);
+  }
+
+  .col-endpoint .host {
+    display: block;
+    font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
+    font-size: var(--size-data, 0.875rem);
+    line-height: var(--leading-data, 1.40);
+    color: var(--ink);
+  }
+
+  .col-endpoint .operator {
+    display: block;
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    font-size: var(--size-small, 0.875rem);
+    line-height: var(--leading-small, 1.45);
+    color: var(--ink-2);
+  }
+
+  .cell-field {
+    padding: 8px 16px;
+    font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
+    font-size: var(--size-data, 0.875rem);
+    line-height: var(--leading-data, 1.40);
+    font-weight: 400;
+    color: var(--ink-2);
+    word-break: break-word;
+  }
+
+  .cell-value {
+    padding: 8px 16px;
+    vertical-align: top;
+    background: var(--field);
+    border-left: 1px solid var(--page);
+    word-break: break-word;
+  }
+
+  .cell-text {
+    font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
+    font-size: var(--size-data, 0.875rem);
+    line-height: var(--leading-data, 1.40);
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cell-value.is-absent .cell-text {
+    font-family: var(--font-sans, 'IBM Plex Sans', system-ui, sans-serif);
+    color: var(--ink-2);
+  }
+
+  /* Colour is semantic. It marks divergence and nothing else. */
+  .row.is-divergent .cell-value {
+    background: var(--delta-wash);
+  }
+
+  .row.is-divergent .cell-value .cell-text {
+    color: var(--delta);
+  }
+
+  .cell-endpoint {
+    display: none;
+  }
+
+  /* The one orchestrated moment on the site: the matching rows settle into
+     alignment over 240ms. Nothing else moves, and nothing fades. */
+  .row.is-identical .cell-value.side-left {
+    animation: settle-from-left 240ms ease-out both;
+  }
+
+  .row.is-identical .cell-value.side-right {
+    animation: settle-from-right 240ms ease-out both;
+  }
+
+  @keyframes settle-from-left {
+    from {
+      transform: translateX(-6px);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes settle-from-right {
+    from {
+      transform: translateX(6px);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .row.is-identical .cell-value.side-left,
+    .row.is-identical .cell-value.side-right {
+      animation: none;
+    }
+  }
+
+  /* At narrow widths the two columns stack and the field name becomes a row
+     header rather than a gutter. */
+  @media (max-width: 640px) {
+    .pane-table,
+    .pane-table tbody,
+    .pane-table tr,
+    .pane-table th,
+    .pane-table td {
+      display: block;
+      width: auto;
+    }
+
+    .pane-table thead {
+      display: none;
+    }
+
+    .row {
+      border-bottom: var(--border, 1px solid var(--rule));
+    }
+
+    .cell-field {
+      padding: 8px 16px 0;
+    }
+
+    .cell-value {
+      border-left: 0;
+      border-top: 1px solid var(--page);
+    }
+
+    .cell-endpoint {
+      display: block;
+      font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
+      font-size: var(--size-micro, 0.75rem);
+      line-height: var(--leading-micro, 1.40);
+      color: var(--ink-2);
+    }
+
+    .row.is-divergent .cell-endpoint {
+      color: var(--delta);
+    }
+  }
+</style>
