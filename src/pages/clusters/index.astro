@@ -1,0 +1,251 @@
+---
+// /clusters - the index. Document 03.
+//
+// Sortable by spread multiple, member count and date last observed. Filterable
+// by capability and confidence. Default sort: date last observed, descending.
+//
+// There is no JavaScript on this page. Sorting is done by writing each row's
+// position under each order into a custom property at build time and letting a
+// checked radio decide which one applies to flex order. Filtering is an
+// attribute selector on the same checked state. With scripting disabled the
+// controls still work, because nothing here was ever scripted.
+
+import Shell from '../_site-shell.astro';
+import {
+  corpus,
+  BaseLayout,
+  usd,
+  multiple,
+  dateHuman,
+  cssId,
+  sortRanks,
+  capabilityFacets,
+  confidenceFacets,
+  lastObserved,
+} from '../_corpus.js';
+
+const Layout = BaseLayout ?? Shell;
+const clusters = corpus.clusters;
+const ranks = sortRanks(clusters);
+const caps = capabilityFacets(clusters);
+const confs = confidenceFacets(clusters);
+
+const SORTS = [
+  { id: 'observed', label: 'date last observed' },
+  { id: 'spread', label: 'spread multiple' },
+  { id: 'members', label: 'member count' },
+];
+
+// Rows are ordered here as well as by css, so that the default order is already
+// correct in the markup rather than only after stylesheets apply.
+const ordered = [...clusters].sort((a, b) => ranks.get(a.slug).observed - ranks.get(b.slug).observed);
+
+// Combinations of capability and confidence that hold no cluster. Generated so
+// that a reader who filters into an empty result is told what happened rather
+// than shown a blank list.
+const emptyCombinations = [];
+for (const cap of caps) {
+  for (const conf of confs) {
+    const n = clusters.filter((c) => (c.capability || 'unclassified') === cap.value && c.confidence === conf.value).length;
+    if (n === 0) emptyCombinations.push([cssId(cap.value), cssId(conf.value)]);
+  }
+}
+
+const css = `
+.cp-state { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; border: 0; clip-path: inset(50%); white-space: nowrap; }
+.cp-controls { display: grid; gap: 8px; margin: 0 0 24px; padding: 16px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.cp-control-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 16px; font-size: 0.875rem; }
+.cp-control-name { color: var(--ink-2); min-width: 7rem; }
+.cp-controls label { color: var(--ink-2); cursor: pointer; border-bottom: 2px solid transparent; padding-bottom: 2px; }
+.cp-controls label:hover { color: var(--ink); }
+.cp-rows-head, .cp-row-inner { display: grid; grid-template-columns: minmax(9rem, 1.3fr) 5rem minmax(7rem, 1fr) minmax(9rem, 1fr) 6rem minmax(8rem, 1fr) 8rem; gap: 16px; align-items: baseline; }
+.cp-rows-head { padding: 8px 0; font-size: 0.875rem; color: var(--ink-2); border-bottom: 1px solid var(--rule); }
+.cp-rows { display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
+.cp-row { border-bottom: 1px solid var(--rule); }
+.cp-row:hover { border-bottom-color: var(--ink-2); }
+.cp-row-inner { padding: 12px 0; }
+.cp-row-id { font-family: var(--font-mono); font-size: 0.875rem; }
+.cp-num { font-family: var(--font-mono); font-size: 0.875rem; }
+.cp-cell-label { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); white-space: nowrap; color: var(--ink-2); font-size: 0.75rem; }
+.cp-empty-filter { display: none; padding: 24px 0; max-width: 68ch; }
+${SORTS.map((s) => `#cp-sort-${s.id}:checked ~ .cp-rows .cp-row { order: var(--r-${s.id}); }`).join('\n')}
+${SORTS.map((s) => `#cp-sort-${s.id}:checked ~ .cp-controls label[for="cp-sort-${s.id}"] { color: var(--ink); border-bottom-color: var(--ink); }`).join('\n')}
+${[...caps.map((c) => `cp-cap-${cssId(c.value)}`), 'cp-cap-all', ...confs.map((c) => `cp-conf-${cssId(c.value)}`), 'cp-conf-all']
+  .map((id) => `#${id}:checked ~ .cp-controls label[for="${id}"] { color: var(--ink); border-bottom-color: var(--ink); }`)
+  .join('\n')}
+${[...SORTS.map((s) => `cp-sort-${s.id}`), ...caps.map((c) => `cp-cap-${cssId(c.value)}`), 'cp-cap-all', ...confs.map((c) => `cp-conf-${cssId(c.value)}`), 'cp-conf-all']
+  .map((id) => `#${id}:focus-visible ~ .cp-controls label[for="${id}"] { outline: 2px solid var(--delta); outline-offset: 2px; }`)
+  .join('\n')}
+${caps.map((c) => `#cp-cap-${cssId(c.value)}:checked ~ .cp-rows .cp-row:not([data-cap="${c.value}"]) { display: none; }`).join('\n')}
+${confs.map((c) => `#cp-conf-${cssId(c.value)}:checked ~ .cp-rows .cp-row:not([data-conf="${c.value}"]) { display: none; }`).join('\n')}
+${emptyCombinations.map(([cap, conf]) => `#cp-cap-${cap}:checked ~ #cp-conf-${conf}:checked ~ .cp-empty-filter { display: block; }`).join('\n')}
+@media (max-width: 900px) {
+  .cp-rows-head { display: none; }
+  .cp-row-inner { grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+  .cp-cell-label { position: static; width: auto; height: auto; clip-path: none; display: block; }
+}
+`.trim();
+
+const title = 'Clusters';
+const description =
+  'Published clusters. Each row is a set of endpoints that returned identical responses, with the price range observed across them.';
+---
+
+<Layout title={title} description={description} observed={corpus.observed_through}>
+  <h1 class="cp-display">Clusters</h1>
+
+  <p class="cp-lede">
+    Each cluster is a set of endpoints whose responses matched across the compared fields. The page for a cluster carries
+    its evidence, the prices observed, and an invitation to dispute the finding.
+  </p>
+
+  <p class="cp-meta">
+    {corpus.stats.clusters_published} published. Method version {corpus.method_version}.{' '}
+    {corpus.observed_through
+      ? <>Observed through <time datetime={corpus.observed_through}>{dateHuman(corpus.observed_through)}</time>.</>
+      : 'No observation recorded yet.'}
+  </p>
+
+  {clusters.length === 0 ? (
+    <section class="cp-empty">
+      <p>
+        {corpus.next_probe_run
+          ? `No clusters published yet. The first probe run is scheduled for ${dateHuman(corpus.next_probe_run)}. The method is published at /method in the meantime.`
+          : corpus.stats.last_probe_run
+            ? `No clusters published yet. The most recent probe run completed on ${dateHuman(corpus.stats.last_probe_run)} and returned no set of endpoints that meets the threshold for publication. The method is published at /method in the meantime.`
+            : 'No clusters published yet. No probe run has completed. The method is published at /method in the meantime.'}
+      </p>
+      <p><a href="/method">Read the method</a></p>
+    </section>
+  ) : (
+    <section class="cp-index">
+      <style is:inline set:html={css}></style>
+
+      {SORTS.map((s) => (
+        <input
+          class="cp-state"
+          type="radio"
+          name="cp-sort"
+          id={`cp-sort-${s.id}`}
+          checked={s.id === 'observed'}
+        />
+      ))}
+      <input class="cp-state" type="radio" name="cp-cap" id="cp-cap-all" checked />
+      {caps.map((c) => <input class="cp-state" type="radio" name="cp-cap" id={`cp-cap-${cssId(c.value)}`} />)}
+      <input class="cp-state" type="radio" name="cp-conf" id="cp-conf-all" checked />
+      {confs.map((c) => <input class="cp-state" type="radio" name="cp-conf" id={`cp-conf-${cssId(c.value)}`} />)}
+
+      <div class="cp-controls">
+        <div class="cp-control-line">
+          <span class="cp-control-name" id="cp-sort-name">Sort by</span>
+          {SORTS.map((s) => <label for={`cp-sort-${s.id}`}>{s.label}</label>)}
+        </div>
+        <div class="cp-control-line">
+          <span class="cp-control-name">Capability</span>
+          <label for="cp-cap-all">all ({clusters.length})</label>
+          {caps.map((c) => <label for={`cp-cap-${cssId(c.value)}`}>{c.value} ({c.count})</label>)}
+        </div>
+        <div class="cp-control-line">
+          <span class="cp-control-name">Confidence</span>
+          <label for="cp-conf-all">all ({clusters.length})</label>
+          {confs.map((c) => <label for={`cp-conf-${cssId(c.value)}`}>{c.value} ({c.count})</label>)}
+        </div>
+      </div>
+
+      <div class="cp-rows-head">
+        <span>cluster</span>
+        <span>members</span>
+        <span>capability</span>
+        <span>price range observed</span>
+        <span>spread</span>
+        <span>last observed</span>
+        <span>confidence</span>
+      </div>
+
+      <ol class="cp-rows">
+        {ordered.map((c) => {
+          const r = ranks.get(c.slug);
+          const min = usd(c.min_price_usd);
+          const max = usd(c.max_price_usd);
+          const spread = multiple(c.spread_multiple);
+          const observed = lastObserved(c);
+          return (
+            <li
+              class="cp-row"
+              data-cap={c.capability || 'unclassified'}
+              data-conf={c.confidence}
+              style={`--r-observed:${r.observed};--r-spread:${r.spread};--r-members:${r.members}`}
+            >
+              <div class="cp-row-inner">
+                <span class="cp-row-id"><a href={`/clusters/${c.slug}`}>{c.slug}</a></span>
+                <span><span class="cp-cell-label">members</span><span class="cp-num">{c.member_count}</span></span>
+                <span><span class="cp-cell-label">capability</span>{c.capability || 'unclassified'}</span>
+                <span>
+                  <span class="cp-cell-label">price range observed</span>
+                  <span class="cp-num">{min === null ? 'not yet observed' : `$${min} - $${max}`}</span>
+                </span>
+                <span>
+                  <span class="cp-cell-label">spread</span>
+                  <span class="cp-num">{spread === null ? '-' : `${spread}x`}</span>
+                </span>
+                <span>
+                  <span class="cp-cell-label">last observed</span>
+                  {observed ? <time datetime={observed}>{dateHuman(observed)}</time> : 'not yet observed'}
+                </span>
+                <span>
+                  <span class="cp-cell-label">confidence</span>
+                  <span class="cp-num">confidence: {c.confidence}</span>
+                </span>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+
+      <p class="cp-empty-filter">
+        No cluster carries that combination of capability and confidence. Clear the capability or the confidence filter
+        to see every published cluster.
+      </p>
+    </section>
+  )}
+
+  <p class="cp-feed">
+    <a href="/clusters/rss.xml">Feed</a> for these findings. Method and limits are at <a href="/method">/method</a>.
+  </p>
+</Layout>
+
+<style>
+  .cp-display {
+    font-size: 2.25rem;
+    line-height: 1.15;
+    font-weight: 600;
+    margin: 0 0 24px;
+  }
+  .cp-lede {
+    max-width: 68ch;
+    margin: 0 0 16px;
+  }
+  .cp-meta {
+    max-width: 68ch;
+    margin: 0 0 40px;
+    font-size: 0.875rem;
+    color: var(--ink-2);
+  }
+  .cp-empty {
+    max-width: 68ch;
+    padding: 24px 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .cp-empty p {
+    margin: 0 0 16px;
+  }
+  .cp-empty p:last-child {
+    margin-bottom: 0;
+  }
+  .cp-feed {
+    margin: 40px 0 0;
+    font-size: 0.875rem;
+    color: var(--ink-2);
+  }
+</style>

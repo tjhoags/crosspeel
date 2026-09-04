@@ -1,0 +1,264 @@
+---
+// /clusters/{slug} - the most important page on the site.
+//
+// The structure below is document 03's, in the order document 03 gives it:
+// title, the claim in one sentence, any dispute notice, the diff pane, the price
+// table, the paired observation record, the evidence blocks, method and
+// confidence, and the dispute invitation.
+//
+// The page states field agreement and price. Nothing more. No sentence here
+// characterises a relationship between operators, because no observation here
+// can support one.
+//
+// "All members, pairwise-selectable" is built without JavaScript: one diff pane
+// per pair of members, one radio per pair, and generated rules that show the
+// selected pane. With scripting disabled the first pair is shown and every pane
+// is still in the document.
+
+import Shell from '../_site-shell.astro';
+import DiffPane from '../../components/DiffPane.astro';
+import DisputeNotice from '../../components/DisputeNotice.astro';
+import EvidenceBlock from '../../components/EvidenceBlock.astro';
+import ConfidenceTag from '../../components/ConfidenceTag.astro';
+import {
+  corpus,
+  BaseLayout,
+  DISPUTE_INVITATION,
+  SITE,
+  usd,
+  multiple,
+  dateHuman,
+  clusterClaim,
+  observedThrough,
+  memberPairs,
+} from '../_corpus.js';
+
+export function getStaticPaths() {
+  // corpus.clusters holds only rows the exporter selected with published = 1.
+  return corpus.clusters.map((cluster) => ({ params: { slug: cluster.slug }, props: { cluster } }));
+}
+
+const Layout = BaseLayout ?? Shell;
+const { cluster } = Astro.props;
+
+const members = cluster.members;
+const pairs = memberPairs(members);
+const claim = clusterClaim(cluster);
+const observed = observedThrough(cluster);
+
+const same = (f, a, b) => JSON.stringify(f.values[a] ?? null) === JSON.stringify(f.values[b] ?? null);
+
+// One pane per pair. Field identity is recomputed for the pair being shown,
+// because two endpoints can agree on a field the whole cluster does not.
+const panes = pairs.map(([a, b], k) => {
+  const fields = cluster.fields.map((f) => ({
+    field: f.field,
+    values: f.values,
+    identical: same(f, a.endpoint_id, b.endpoint_id),
+  }));
+  return { k, a, b, fields, matched: fields.filter((f) => f.identical).length, compared: fields.length };
+});
+
+const paneCss = `
+.cp-state { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; border: 0; clip-path: inset(50%); white-space: nowrap; }
+.cp-pair-controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: baseline; margin: 0 0 16px; font-size: 0.875rem; }
+.cp-pair-controls label { color: var(--ink-2); cursor: pointer; border-bottom: 2px solid transparent; padding-bottom: 2px; font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace); }
+.cp-pair-controls label:hover { color: var(--ink); }
+.cp-pane-slot { display: none; }
+${panes
+  .map(
+    (p) => `#cp-pair-${p.k}:checked ~ .cp-pair-controls label[for="cp-pair-${p.k}"] { color: var(--ink); border-bottom-color: var(--ink); }
+#cp-pair-${p.k}:focus-visible ~ .cp-pair-controls label[for="cp-pair-${p.k}"] { outline: 2px solid var(--delta); outline-offset: 2px; }
+#cp-pair-${p.k}:checked ~ .cp-panes .cp-pane-slot-${p.k} { display: block; }`
+  )
+  .join('\n')}
+`.trim();
+
+const title = `Cluster ${cluster.slug} - ${cluster.capability || 'unclassified'}`;
+const description = claim;
+---
+
+<Layout title={title} description={description} observed={observed} width="full">
+  <h1 class="cp-display">Cluster {cluster.slug} - {cluster.capability || 'unclassified'}</h1>
+
+  <p class="cp-claim">{claim}</p>
+  <p class="cp-meta">
+    {observed ? <>Last observed <time datetime={observed}>{dateHuman(observed)}</time>. </> : 'No observation recorded yet. '}
+    Method version <span class="cp-mono">{cluster.method_version}</span>. <ConfidenceTag confidence={cluster.confidence} />
+  </p>
+
+  {cluster.disputes.length > 0 && (
+    <div class="cp-dispute-wrap">
+      <DisputeNotice disputes={cluster.disputes} />
+    </div>
+  )}
+
+  <section class="cp-section" aria-labelledby="cp-diff-heading">
+    <h2 id="cp-diff-heading">Captured fields</h2>
+
+    {panes.length === 0 || cluster.fields.length === 0 ? (
+      <p class="cp-empty-note">
+        No observation has been captured for these endpoints yet. There is nothing to compare, and nothing is shown in
+        its place.
+      </p>
+    ) : (
+      <div class="cp-pane-wrap">
+        <style is:inline set:html={paneCss}></style>
+
+        {panes.map((p) => (
+          <input class="cp-state" type="radio" name="cp-pair" id={`cp-pair-${p.k}`} checked={p.k === 0} />
+        ))}
+
+        {panes.length > 1 && (
+          <div class="cp-pair-controls">
+            <span class="cp-pair-name">Compare</span>
+            {panes.map((p) => <label for={`cp-pair-${p.k}`}>{p.a.hostname} against {p.b.hostname}</label>)}
+          </div>
+        )}
+
+        <div class="cp-panes">
+          {panes.map((p) => (
+            <div class={`cp-pane-slot cp-pane-slot-${p.k}`}>
+              <DiffPane
+                left={p.a}
+                right={p.b}
+                fields={p.fields}
+                matchedFields={p.matched}
+                comparedFields={p.compared}
+                observedAt={observed}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </section>
+
+  <section class="cp-section" aria-labelledby="cp-price-heading">
+    <h2 id="cp-price-heading">Prices observed</h2>
+    <div class="cp-scroll">
+      <table class="cp-table">
+        <thead>
+          <tr>
+            <th scope="col">endpoint</th>
+            <th scope="col">operator, as advertised</th>
+            <th scope="col">price observed, USD</th>
+            <th scope="col">multiple against cluster minimum</th>
+            <th scope="col">observed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {members.map((m) => {
+            const price = usd(m.price_usd);
+            const mult = multiple(m.multiple_vs_min);
+            const diverges = typeof m.multiple_vs_min === 'number' && m.multiple_vs_min > 1;
+            return (
+              <tr>
+                <th scope="row" class="cp-mono cp-host"><a href={`/endpoints/${m.slug}`}>{m.hostname}</a></th>
+                <td>{m.operator_name || 'not advertised'}</td>
+                <td class="cp-mono">{price === null ? 'not yet observed' : `$${price}`}</td>
+                <td class={diverges ? 'cp-mono cp-delta' : 'cp-mono'}>{mult === null ? '-' : `${mult}x`}</td>
+                <td>{m.observed_at ? <time datetime={m.observed_at}>{dateHuman(m.observed_at)}</time> : '-'}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+    <p class="cp-meta">
+      Every price in this table was paid by Crosspeel and measured on the call. Advertised prices are held separately and
+      are marked as recorded on each endpoint page.
+    </p>
+  </section>
+
+  <section class="cp-section" aria-labelledby="cp-paired-heading">
+    <h2 id="cp-paired-heading">Paired observation record</h2>
+    <dl class="cp-facts">
+      <div><dt>paired observations</dt><dd class="cp-mono">{cluster.paired_obs_count}</dd></div>
+      <div><dt>distinct probe inputs</dt><dd class="cp-mono">{cluster.observation_window.distinct_inputs}</dd></div>
+      <div>
+        <dt>date range</dt>
+        <dd class="cp-mono">
+          {cluster.observation_window.from
+            ? <><time datetime={cluster.observation_window.from}>{cluster.observation_window.from}</time> to <time datetime={cluster.observation_window.to}>{cluster.observation_window.to}</time></>
+            : 'no observation recorded'}
+        </dd>
+      </div>
+      <div><dt>fields compared</dt><dd class="cp-mono">{cluster.compared_fields}</dd></div>
+      <div><dt>fields matched</dt><dd class="cp-mono">{cluster.matched_fields}</dd></div>
+      <div><dt>members</dt><dd class="cp-mono">{cluster.member_count}</dd></div>
+    </dl>
+  </section>
+
+  <section class="cp-section" aria-labelledby="cp-evidence-heading">
+    <h2 id="cp-evidence-heading">Evidence</h2>
+    {cluster.evidence.length === 0 ? (
+      <p class="cp-empty-note">No stored response is held for this cluster yet.</p>
+    ) : (
+      <>
+        <p class="cp-meta">
+          {cluster.evidence.length} stored responses. Each was written once and is never updated or deleted.
+        </p>
+        <ol class="cp-evidence-list">
+          {cluster.evidence.map((e) => {
+            const member = members.find((m) => m.endpoint_id === e.endpoint_id);
+            return (
+              <li>
+                <EvidenceBlock evidence={e} hostname={member ? member.hostname : e.endpoint_id} />
+              </li>
+            );
+          })}
+        </ol>
+      </>
+    )}
+  </section>
+
+  <section class="cp-section" aria-labelledby="cp-method-heading">
+    <h2 id="cp-method-heading">Method and confidence</h2>
+    <dl class="cp-facts">
+      <div><dt>method version</dt><dd class="cp-mono">{cluster.method_version}</dd></div>
+      <div><dt>confidence</dt><dd><ConfidenceTag confidence={cluster.confidence} /></dd></div>
+      <div><dt>first published</dt><dd class="cp-mono">{cluster.first_published || 'not recorded'}</dd></div>
+      <div><dt>last updated</dt><dd class="cp-mono">{cluster.last_updated}</dd></div>
+    </dl>
+    <p class="cp-prose">
+      The method, and what it cannot see, are set out at <a href="/method">/method</a>. Two operators independently using
+      the same upstream vendor produce the same agreement as any other shared origin, and nothing measured here observes
+      ownership, contracts, or intent.
+    </p>
+  </section>
+
+  <section class="cp-section" aria-labelledby="cp-invite-heading">
+    <h2 id="cp-invite-heading">Dispute this finding</h2>
+    <p class="cp-prose">{DISPUTE_INVITATION}</p>
+    <p class="cp-prose"><a href={`mailto:${SITE.disputeEmail}`}>{SITE.disputeEmail}</a></p>
+  </section>
+</Layout>
+
+<style>
+  .cp-display { font-size: 2.25rem; line-height: 1.15; font-weight: 600; margin: 0 0 16px; }
+  h2 { font-size: 1.5rem; line-height: 1.25; font-weight: 600; margin: 0 0 16px; }
+  .cp-claim { max-width: 68ch; margin: 0 0 8px; }
+  .cp-meta { max-width: 68ch; font-size: 0.875rem; color: var(--ink-2); margin: 0 0 24px; }
+  .cp-prose { max-width: 68ch; margin: 0 0 16px; }
+  .cp-mono { font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace); font-size: 0.875rem; }
+  .cp-host { font-weight: 400; }
+  .cp-delta { color: var(--delta); background: var(--delta-wash); }
+  .cp-section { margin: 0 0 64px; padding-top: 40px; border-top: 1px solid var(--rule); }
+  .cp-empty-note { max-width: 68ch; color: var(--ink-2); }
+  .cp-dispute-wrap { margin: 0 0 40px; }
+  .cp-pair-name { color: var(--ink-2); }
+  .cp-scroll { overflow-x: auto; }
+  .cp-table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
+  .cp-table th, .cp-table td { text-align: left; padding: 8px 16px 8px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  .cp-table thead th { font-weight: 400; color: var(--ink-2); }
+  .cp-facts { display: grid; gap: 8px; margin: 0 0 16px; max-width: 68ch; }
+  .cp-facts > div { display: grid; grid-template-columns: 16rem 1fr; gap: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
+  .cp-facts dt { color: var(--ink-2); font-size: 0.875rem; }
+  .cp-facts dd { margin: 0; }
+  .cp-evidence-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+  @media (max-width: 700px) {
+    .cp-display { font-size: 1.75rem; }
+    .cp-facts > div { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>

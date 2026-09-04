@@ -1,0 +1,138 @@
+---
+// Fallback document shell for the pre-rendered cluster and endpoint pages.
+//
+// The shared layout is written at runbook step D3. This step is D4 and has to
+// build and be verifiable on its own, so the pages take the shared layout when
+// it is present and this when it is not. The chrome here is document 03's
+// global chrome and the tokens are document 01's, so the fallback is not a
+// different design - it is the same one, written twice, and this second
+// rendering stops the moment a shared layout exists in src/layouts.
+//
+// The underscore prefix keeps this out of the route table.
+
+const { title, description, observed } = Astro.props;
+const year = new Date().getUTCFullYear();
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    {observed && <meta name="observed" content={observed} />}
+    <link rel="alternate" type="application/rss+xml" title="Crosspeel clusters" href="/clusters/rss.xml" />
+    <link rel="preload" href="/fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/ibm-plex-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <style is:inline>
+      @font-face {
+        font-family: 'IBM Plex Sans';
+        font-style: normal;
+        font-weight: 400;
+        font-display: block;
+        src: url('/fonts/ibm-plex-sans-latin-400-normal.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'IBM Plex Sans';
+        font-style: normal;
+        font-weight: 600;
+        font-display: block;
+        src: url('/fonts/ibm-plex-sans-latin-600-normal.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'IBM Plex Mono';
+        font-style: normal;
+        font-weight: 400;
+        font-display: block;
+        src: url('/fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2');
+      }
+      :root {
+        --page: #fafbf9;
+        --field: #eff2ee;
+        --rule: #cfd6d0;
+        --ink: #14201b;
+        --ink-2: #55635c;
+        --delta: #2b3a8f;
+        --delta-wash: #e8eaf5;
+        --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+        --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+        --s1: 8px;
+        --s2: 16px;
+        --s3: 24px;
+        --s4: 40px;
+        --s5: 64px;
+        --s6: 96px;
+      }
+      * { box-sizing: border-box; }
+      html { background: var(--page); }
+      body {
+        margin: 0;
+        background: var(--page);
+        color: var(--ink);
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        line-height: 1.55;
+        font-variant-numeric: tabular-nums;
+      }
+      a { color: inherit; text-underline-offset: 2px; }
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible,
+      summary:focus-visible { outline: 2px solid var(--delta); outline-offset: 2px; }
+      .cp-container { max-width: 1200px; margin: 0 auto; padding: 0 var(--s3); }
+      .cp-header { border-bottom: 1px solid var(--rule); }
+      .cp-header-inner {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--s2);
+        align-items: baseline;
+        justify-content: space-between;
+        padding-top: var(--s2);
+        padding-bottom: var(--s2);
+      }
+      .cp-wordmark { font-weight: 600; font-size: 1.125rem; text-decoration: none; }
+      .cp-nav { display: flex; flex-wrap: wrap; gap: var(--s3); font-size: 0.875rem; }
+      .cp-nav a { color: var(--ink-2); text-decoration: none; }
+      .cp-nav a:hover { color: var(--ink); text-decoration: underline; }
+      .cp-main { padding-top: var(--s4); padding-bottom: var(--s5); }
+      .cp-footer { border-top: 1px solid var(--rule); font-size: 0.875rem; color: var(--ink-2); }
+      .cp-footer-inner { padding-top: var(--s3); padding-bottom: var(--s3); display: grid; gap: var(--s1); }
+      .cp-footer-links { display: flex; flex-wrap: wrap; gap: var(--s3); }
+      .cp-footer a { color: var(--ink-2); }
+      @media (max-width: 480px) {
+        .cp-container { padding: 0 var(--s2); }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="cp-header">
+      <div class="cp-container cp-header-inner">
+        <a class="cp-wordmark" href="/">Crosspeel</a>
+        <nav class="cp-nav" aria-label="Primary">
+          <a href="/clusters">Clusters</a>
+          <a href="/endpoints">Endpoints</a>
+          <a href="/method">Method</a>
+          <a href="/bakeoff">Bakeoff</a>
+          <a href="/mcp">MCP</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="cp-container cp-main">
+      <slot />
+    </main>
+
+    <footer class="cp-footer">
+      <div class="cp-container cp-footer-inner">
+        <div class="cp-footer-links">
+          <a href="/disputes">Disputes</a>
+          <a href="/about">About</a>
+          <a href="/method">Method</a>
+          <a href="https://github.com/tjhoags/crosspeel">GitHub</a>
+          <a href="mailto:disputes@crosspeel.com">disputes@crosspeel.com</a>
+        </div>
+        <p>Crosspeel is built and operated by <a href="https://tomhogan.io">Tom Hogan</a>.</p>
+      </div>
+    </footer>
+  </body>
+</html>

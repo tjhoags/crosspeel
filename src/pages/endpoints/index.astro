@@ -1,0 +1,94 @@
+---
+// /endpoints - every endpoint observed, with price history. Document 03.
+//
+// An endpoint reaches this index once Crosspeel has called and measured it. The
+// endpoints table in D1 also holds every url read out of a directory, and those
+// are recorded rather than observed; the exporter withholds them, because a page
+// headed with first seen, last seen and price history for a url nobody has
+// called would present a recorded claim as an observed one.
+
+import Shell from '../_site-shell.astro';
+import { corpus, BaseLayout, usd, dateHuman } from '../_corpus.js';
+
+const Layout = BaseLayout ?? Shell;
+
+const endpoints = [...corpus.endpoints].sort((a, b) => (a.hostname < b.hostname ? -1 : a.hostname > b.hostname ? 1 : 0));
+const clustered = endpoints.filter((e) => e.cluster_slug).length;
+
+const title = 'Endpoints';
+const description = 'Every endpoint Crosspeel has called and measured, with its price history and its observations.';
+---
+
+<Layout title={title} description={description} observed={corpus.observed_through}>
+  <h1 class="cp-display">Endpoints</h1>
+
+  <p class="cp-lede">
+    Every endpoint Crosspeel has called and measured. Each page holds what was advertised, what was returned, what it
+    cost, and every stored response.
+  </p>
+
+  <p class="cp-meta">
+    {endpoints.length} endpoints. {clustered} are members of a published cluster.
+    {corpus.observed_through
+      ? <> Observed through <time datetime={corpus.observed_through}>{dateHuman(corpus.observed_through)}</time>.</>
+      : ' No observation recorded yet.'}
+  </p>
+
+  {endpoints.length === 0 ? (
+    <section class="cp-empty">
+      <p>
+        No endpoint has been called yet. The method is published at <a href="/method">/method</a>, and endpoints appear
+        here as soon as one has been measured.
+      </p>
+    </section>
+  ) : (
+    <div class="cp-scroll">
+      <table class="cp-table">
+        <thead>
+          <tr>
+            <th scope="col">hostname</th>
+            <th scope="col">capability, as advertised</th>
+            <th scope="col">source directory</th>
+            <th scope="col">observations</th>
+            <th scope="col">price observed, USD</th>
+            <th scope="col">last seen</th>
+            <th scope="col">status</th>
+            <th scope="col">cluster</th>
+          </tr>
+        </thead>
+        <tbody>
+          {endpoints.map((e) => {
+            const price = e.latest_observed_price ? usd(e.latest_observed_price.amount_usd) : null;
+            return (
+              <tr>
+                <th scope="row" class="cp-mono cp-host"><a href={`/endpoints/${e.slug}`}>{e.hostname}</a></th>
+                <td>{e.capability || 'not advertised'}</td>
+                <td>{e.source_directory}</td>
+                <td class="cp-mono">{e.observation_count}</td>
+                <td class="cp-mono">{price === null ? 'not yet observed' : `$${price}`}</td>
+                <td><time datetime={e.last_seen}>{dateHuman(e.last_seen)}</time></td>
+                <td class="cp-mono">{e.status}</td>
+                <td class="cp-mono">{e.cluster_slug ? <a href={`/clusters/${e.cluster_slug}`}>{e.cluster_slug}</a> : '-'}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  )}
+</Layout>
+
+<style>
+  .cp-display { font-size: 2.25rem; line-height: 1.15; font-weight: 600; margin: 0 0 24px; }
+  .cp-lede { max-width: 68ch; margin: 0 0 16px; }
+  .cp-meta { max-width: 68ch; margin: 0 0 40px; font-size: 0.875rem; color: var(--ink-2); }
+  .cp-empty { max-width: 68ch; padding: 24px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .cp-empty p { margin: 0; }
+  .cp-scroll { overflow-x: auto; }
+  .cp-mono { font-family: var(--font-mono); font-size: 0.875rem; }
+  .cp-host { font-weight: 400; }
+  .cp-table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
+  .cp-table th, .cp-table td { text-align: left; padding: 8px 16px 8px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  .cp-table thead th { font-weight: 400; color: var(--ink-2); white-space: nowrap; }
+  .cp-table tbody tr:hover th, .cp-table tbody tr:hover td { border-bottom-color: var(--ink-2); }
+</style>

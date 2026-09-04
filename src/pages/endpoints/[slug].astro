@@ -1,0 +1,196 @@
+---
+// /endpoints/{slug} - one endpoint. Document 03.
+//
+// Hostname, advertised operator, advertised capability, source directory, first
+// and last seen, current status, price history as a table with dates, cluster
+// membership if any, and every observation with its evidence link.
+//
+// The advertised block and the observed block are kept apart and each is labelled
+// with its provenance. What an operator advertises was read somewhere and written
+// down; what Crosspeel returns here was measured on a call it made. Document 00:
+// nothing anywhere presents a recorded claim as an observed one.
+
+import Shell from '../_site-shell.astro';
+import { corpus, BaseLayout, usd, ms, dateHuman } from '../_corpus.js';
+
+export function getStaticPaths() {
+  return corpus.endpoints.map((endpoint) => ({ params: { slug: endpoint.slug }, props: { endpoint } }));
+}
+
+const Layout = BaseLayout ?? Shell;
+const { endpoint } = Astro.props;
+
+const cluster = endpoint.cluster_slug ? corpus.clusters.find((c) => c.slug === endpoint.cluster_slug) : null;
+const observedPrices = endpoint.price_history.filter((p) => p.provenance === 'observed').length;
+const recordedPrices = endpoint.price_history.length - observedPrices;
+const newest = endpoint.observations.length ? endpoint.observations[endpoint.observations.length - 1].observed_at : null;
+const totalCost = endpoint.observations.reduce((n, o) => n + (typeof o.cost_usd === 'number' ? o.cost_usd : 0), 0);
+
+const title = endpoint.hostname;
+const description = `What Crosspeel observed at ${endpoint.hostname}: ${endpoint.observation_count} observations, price history, and every stored response.`;
+---
+
+<Layout title={title} description={description} observed={newest || endpoint.last_seen}>
+  <h1 class="cp-display cp-mono-display">{endpoint.hostname}</h1>
+
+  <p class="cp-lede">
+    {endpoint.observation_count} observations recorded.
+    {newest ? <> Last observed <time datetime={newest}>{dateHuman(newest)}</time>.</> : ' No observation recorded yet.'}
+    {' '}<span class="cp-mono">status: {endpoint.status}</span>
+  </p>
+
+  <section class="cp-section" aria-labelledby="cp-advertised">
+    <h2 id="cp-advertised">As advertised</h2>
+    <p class="cp-meta">
+      Read from a directory and written down with its source and date. Not measured. <span class="cp-mono">provenance: recorded</span>
+    </p>
+    <dl class="cp-facts">
+      <div><dt>url</dt><dd class="cp-mono cp-break">{endpoint.url}</dd></div>
+      <div><dt>hostname</dt><dd class="cp-mono">{endpoint.hostname}</dd></div>
+      <div><dt>operator</dt><dd>{endpoint.operator_name || 'not advertised'}</dd></div>
+      <div><dt>capability</dt><dd>{endpoint.capability || 'not advertised'}</dd></div>
+      <div><dt>capability tag</dt><dd class="cp-mono">{endpoint.tag || 'unclassified'}</dd></div>
+      <div><dt>source directory</dt><dd>{endpoint.source_directory}</dd></div>
+    </dl>
+  </section>
+
+  <section class="cp-section" aria-labelledby="cp-seen">
+    <h2 id="cp-seen">Seen</h2>
+    <dl class="cp-facts">
+      <div><dt>first seen</dt><dd><time datetime={endpoint.first_seen}>{dateHuman(endpoint.first_seen)}</time> <span class="cp-micro">{endpoint.first_seen}</span></dd></div>
+      <div><dt>last seen</dt><dd><time datetime={endpoint.last_seen}>{dateHuman(endpoint.last_seen)}</time> <span class="cp-micro">{endpoint.last_seen}</span></dd></div>
+      <div><dt>current status</dt><dd class="cp-mono">{endpoint.status}</dd></div>
+      <div><dt>observations</dt><dd class="cp-mono">{endpoint.observation_count}</dd></div>
+      <div><dt>observation cost, USD</dt><dd class="cp-mono">${usd(totalCost)}</dd></div>
+    </dl>
+  </section>
+
+  <section class="cp-section" aria-labelledby="cp-prices">
+    <h2 id="cp-prices">Price history</h2>
+    {endpoint.price_history.length === 0 ? (
+      <p class="cp-empty-note">No price has been recorded or observed for this endpoint.</p>
+    ) : (
+      <>
+        <p class="cp-meta">
+          {endpoint.price_history.length} rows. {observedPrices} observed on a call Crosspeel made, {recordedPrices} recorded
+          from an advertised figure. The provenance column says which, on every row, and the two are never added together.
+        </p>
+        <div class="cp-scroll">
+          <table class="cp-table">
+            <thead>
+              <tr>
+                <th scope="col">date</th>
+                <th scope="col">amount, USD</th>
+                <th scope="col">quoted amount</th>
+                <th scope="col">asset</th>
+                <th scope="col">provenance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {endpoint.price_history.map((p) => (
+                <tr>
+                  <td><time datetime={p.observed_at}>{dateHuman(p.observed_at)}</time></td>
+                  <td class="cp-mono">${usd(p.amount_usd)}</td>
+                  <td class="cp-mono cp-break">{p.raw_amount === null ? '-' : p.raw_amount}</td>
+                  <td class="cp-mono cp-break">{p.asset === null ? '-' : p.asset}</td>
+                  <td class="cp-mono">provenance: {p.provenance}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>
+    )}
+  </section>
+
+  <section class="cp-section" aria-labelledby="cp-cluster">
+    <h2 id="cp-cluster">Cluster membership</h2>
+    {cluster ? (
+      <>
+        <p class="cp-prose">
+          This endpoint is a member of cluster <a href={`/clusters/${cluster.slug}`}>{cluster.slug}</a>, published with
+          {' '}<span class="cp-mono">confidence: {cluster.confidence}</span> under method version
+          {' '}<span class="cp-mono">{cluster.method_version}</span>. The finding, its evidence, and the invitation to
+          dispute it are on that page.
+        </p>
+      </>
+    ) : (
+      <p class="cp-prose">
+        This endpoint is not a member of any published cluster. That means either no match was found at the current
+        threshold, or the observations behind a candidate match do not yet reach the depth the method requires. Neither
+        is a statement about the endpoint. The thresholds are at <a href="/method">/method</a>.
+      </p>
+    )}
+  </section>
+
+  <section class="cp-section" aria-labelledby="cp-observations">
+    <h2 id="cp-observations">Observations</h2>
+    {endpoint.observations.length === 0 ? (
+      <p class="cp-empty-note">No observation has been recorded for this endpoint.</p>
+    ) : (
+      <div class="cp-scroll">
+        <table class="cp-table">
+          <thead>
+            <tr>
+              <th scope="col">observed at</th>
+              <th scope="col">status</th>
+              <th scope="col">ttfb, ms</th>
+              <th scope="col">total, ms</th>
+              <th scope="col">cost, USD</th>
+              <th scope="col">sha256 of body</th>
+              <th scope="col">evidence</th>
+            </tr>
+          </thead>
+          <tbody>
+            {endpoint.observations.map((o) => (
+              <tr>
+                <td class="cp-mono"><time datetime={o.observed_at}>{o.observed_at}</time></td>
+                <td class="cp-mono">{o.status_code}</td>
+                <td class="cp-mono">{ms(o.ttfb_ms) ?? '-'}</td>
+                <td class="cp-mono">{ms(o.total_ms) ?? '-'}</td>
+                <td class="cp-mono">{usd(o.cost_usd) ?? '-'}</td>
+                <td class="cp-micro cp-break">{o.body_sha256}</td>
+                <td class="cp-micro">
+                  <a href={o.permalink}>response</a>
+                  {o.headers_permalink && <> - <a href={o.headers_permalink}>headers</a></>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </section>
+
+  <p class="cp-meta">
+    An error in this record can be corrected. Write to
+    {' '}<a href="mailto:disputes@crosspeel.com">disputes@crosspeel.com</a> with the endpoint URL and what you believe is
+    inaccurate.
+  </p>
+</Layout>
+
+<style>
+  .cp-display { font-size: 2.25rem; line-height: 1.15; font-weight: 600; margin: 0 0 16px; overflow-wrap: anywhere; }
+  .cp-mono-display { font-family: var(--font-mono); font-size: 1.75rem; }
+  h2 { font-size: 1.5rem; line-height: 1.25; font-weight: 600; margin: 0 0 16px; }
+  .cp-lede { max-width: 68ch; margin: 0 0 40px; }
+  .cp-prose { max-width: 68ch; margin: 0 0 16px; }
+  .cp-meta { max-width: 68ch; font-size: 0.875rem; color: var(--ink-2); margin: 0 0 24px; }
+  .cp-mono { font-family: var(--font-mono); font-size: 0.875rem; }
+  .cp-micro { font-family: var(--font-mono); font-size: 0.75rem; color: var(--ink-2); }
+  .cp-break { overflow-wrap: anywhere; }
+  .cp-section { margin: 0 0 64px; padding-top: 40px; border-top: 1px solid var(--rule); }
+  .cp-empty-note { max-width: 68ch; color: var(--ink-2); }
+  .cp-scroll { overflow-x: auto; }
+  .cp-facts { display: grid; gap: 8px; margin: 0; max-width: 68ch; }
+  .cp-facts > div { display: grid; grid-template-columns: 14rem 1fr; gap: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
+  .cp-facts dt { color: var(--ink-2); font-size: 0.875rem; }
+  .cp-facts dd { margin: 0; }
+  .cp-table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
+  .cp-table th, .cp-table td { text-align: left; padding: 8px 16px 8px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  .cp-table thead th { font-weight: 400; color: var(--ink-2); white-space: nowrap; }
+  @media (max-width: 700px) {
+    .cp-mono-display { font-size: 1.25rem; }
+    .cp-facts > div { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>
