@@ -1,0 +1,21 @@
+---
+// 404 - document 03, "Global chrome". The wording is fixed and is exactly this.
+// No joke, no illustration. Errors give direction: what happened, then the next
+// action.
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="Page not found"
+  description="That page does not exist. The cluster index is at /clusters."
+  width="prose"
+>
+  <h1>That page does not exist.</h1>
+  <p class="direction">The cluster index is at <a href="/clusters">/clusters</a>.</p>
+</Layout>
+
+<style>
+  h1 {
+    margin-bottom: var(--space-16);
+  }
+</style>

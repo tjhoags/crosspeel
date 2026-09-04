@@ -1,0 +1,318 @@
+---
+// Bakeoff - document 03, "/bakeoff", and document 04.
+//
+// What it does, what it costs, what you get, how long it takes, and the form.
+// No urgency language, no scarcity, no countdown.
+//
+// The two opening paragraphs are document 03 verbatim. The disclosure sentence
+// about observations entering the public record after seven days is not
+// optional and appears above the form, before anyone pays.
+import Layout from '../layouts/Layout.astro';
+import corpusJson from '../data/corpus.json';
+
+interface PriceVariant {
+  variant: string;
+  price_usd: number;
+}
+
+interface Bakeoff {
+  variants?: PriceVariant[] | null;
+  inputs_per_endpoint?: number | null;
+  min_endpoints?: number | null;
+  max_endpoints?: number | null;
+  delivery_minutes?: number | null;
+}
+
+interface Corpus {
+  bakeoff: Bakeoff;
+}
+
+const corpus = corpusJson as unknown as Corpus;
+const bakeoff = corpus.bakeoff ?? {};
+
+const variants: PriceVariant[] = Array.isArray(bakeoff.variants) ? bakeoff.variants : [];
+const defaultVariant = variants[0] ?? null;
+
+const inputsPerEndpoint =
+  typeof bakeoff.inputs_per_endpoint === 'number' ? bakeoff.inputs_per_endpoint : null;
+const minEndpoints = typeof bakeoff.min_endpoints === 'number' ? bakeoff.min_endpoints : 2;
+const maxEndpoints = typeof bakeoff.max_endpoints === 'number' ? bakeoff.max_endpoints : 8;
+
+// Document 03's wording carries a delivery time as a slot. It is filled from
+// measured data or it is not stated. No placeholder figure ever ships.
+const deliveryMinutes =
+  typeof bakeoff.delivery_minutes === 'number' && Number.isFinite(bakeoff.delivery_minutes)
+    ? bakeoff.delivery_minutes
+    : null;
+
+const endpointSlots = Array.from({ length: maxEndpoints }, (_, index) => index + 1);
+
+// A published cluster is held to 30 paired observations - document 02, method
+// version 1 step 3. A Bakeoff runs at reduced depth and the page says so.
+const publishedClusterDepth = 30;
+---
+
+<Layout
+  title="Bakeoff"
+  description="Name the endpoints you use or are considering. Crosspeel pays each one, compares the responses, and returns a report."
+  width="prose"
+>
+  <h1>Bakeoff</h1>
+
+  <div class="prose">
+    <p>
+      Name the endpoints you are using or considering. Crosspeel pays each one, compares the
+      responses, and returns a report showing which are serving the same thing and where the price
+      differences are.
+    </p>
+
+    {deliveryMinutes !== null ? (
+      <p>
+        Reports are delivered by email, usually within {deliveryMinutes} minutes. The endpoints you
+        submit are probed with your payment; the resulting observations enter the public record
+        after a seven day delay, without your name attached.
+      </p>
+    ) : (
+      <p>
+        Reports are delivered by email. Typical delivery time is not yet measured and is stated
+        here once it is. The endpoints you submit are probed with your payment; the resulting
+        observations enter the public record after a seven day delay, without your name attached.
+      </p>
+    )}
+
+    <h2>What it costs</h2>
+    {defaultVariant ? (
+      <Fragment>
+        {/* Integration point - document 04, gate C1b. The price variant is
+            assigned on first visit, held in a cookie, and recorded on every page
+            view and every sale, so the same visitor is never shown two prices.
+            That assignment is not this page's work. It reads and rewrites the
+            attributes below:
+              [data-bakeoff-price]      the element carrying the assignment
+              data-price-variant        A, B or C
+              data-price-usd            the figure shown, two decimal places
+              data-price-variants       every variant in the corpus, as JSON
+              [data-price-display]      the text node the reader sees
+            The value rendered here is the first variant in the corpus and is
+            what a visitor sees if no assignment has been made. */}
+        <p
+          class="price"
+          data-bakeoff-price
+          data-price-variant={defaultVariant.variant}
+          data-price-usd={defaultVariant.price_usd.toFixed(2)}
+          data-price-variants={JSON.stringify(variants)}
+        >
+          <span class="price-figure" data-price-display>{defaultVariant.price_usd.toFixed(2)} USD</span>
+          <span class="price-unit">one report, paid once, by card</span>
+        </p>
+      </Fragment>
+    ) : (
+      <p class="price-pending">
+        The price is not set. It is derived from measured market data before this product takes
+        payment - document 04, gate C1.
+      </p>
+    )}
+    <p>
+      Between {minEndpoints} and {maxEndpoints} endpoints in one report. The fee is the same
+      whichever number you submit.
+    </p>
+
+    <h2>What you get</h2>
+    <ul class="plain">
+      <li>The finding in one sentence, whether or not anything matched.</li>
+      <li>A field comparison for every pair that matched, laid out line by line.</li>
+      <li>
+        A price table: each endpoint, the price paid, and its multiple against the cheapest
+        endpoint in its match group.
+      </li>
+      <li>
+        Where a match was found, the saving stated as arithmetic at a stated call volume.
+      </li>
+      <li>
+        Every endpoint's full observation record, including the endpoints that matched nothing.
+      </li>
+      <li>The method, the depth, and the confidence the depth supports.</li>
+      <li>What the method cannot see, in the report, next to what it found.</li>
+    </ul>
+    <p>
+      A report that finds nothing is delivered at full detail. It records that the endpoints
+      submitted returned different responses, which is the answer most buyers are hoping for and
+      is worth the same measurement.
+    </p>
+    <p>The report ends at arithmetic. It does not recommend a vendor.</p>
+
+    <h2>Depth and confidence</h2>
+    <p>
+      Each endpoint receives {inputsPerEndpoint ?? 'a fixed set of'} distinct probe inputs. A
+      cluster published on this site requires {publishedClusterDepth} paired observations before it
+      is published at all, so a Bakeoff runs at reduced depth and the report states the confidence
+      that depth supports rather than the confidence a deeper run would support.
+    </p>
+
+    <h2>If an endpoint does not respond</h2>
+    <ul class="plain">
+      <li>
+        An endpoint that cannot be reached is rejected before payment, with the reason stated.
+      </li>
+      <li>
+        An endpoint that fails during probing is reported as failed, with its error, and its share
+        of the fee is refunded.
+      </li>
+      <li>
+        If fewer than two endpoints complete, the whole fee is refunded and no report is sent.
+      </li>
+      <li>Refunds are automatic. There is nothing to request.</li>
+    </ul>
+
+    <h2>Submit your endpoints</h2>
+    {/* Integration point - document 04, flow steps 1 to 3. The Worker at this
+        action validates each URL is reachable and machine-payable, quotes an
+        x402 payment challenge, then creates a Stripe Checkout session carrying
+        the endpoint list as metadata. The form posts without JavaScript. */}
+    <form class="bakeoff-form" method="post" action="/api/bakeoff">
+      <fieldset>
+        <legend>Endpoint URLs</legend>
+        <p class="field-note">
+          The first {minEndpoints} are required. Leave the rest empty if you have fewer.
+        </p>
+        {endpointSlots.map((slot) => (
+          <p class="field">
+            <label for={`endpoint-${slot}`}>Endpoint {slot}</label>
+            <input
+              type="url"
+              id={`endpoint-${slot}`}
+              name="endpoint"
+              inputmode="url"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="https://"
+              required={slot <= minEndpoints}
+            />
+          </p>
+        ))}
+      </fieldset>
+
+      <fieldset>
+        <legend>Delivery</legend>
+        <p class="field">
+          <label for="email">Email address</label>
+          <input type="email" id="email" name="email" autocomplete="email" required />
+          <span class="field-note">The report is sent here. It is not used for anything else.</span>
+        </p>
+      </fieldset>
+
+      <p class="disclosure">
+        The endpoints you submit are probed with your payment; the resulting observations enter the
+        public record after a seven day delay, without your name attached.
+      </p>
+
+      <p class="submit">
+        <button type="submit">Continue to payment</button>
+      </p>
+    </form>
+  </div>
+</Layout>
+
+<style>
+  h1 {
+    margin-bottom: var(--space-24);
+  }
+
+  .price {
+    border-top: var(--border);
+    border-bottom: var(--border);
+    padding: var(--space-16) 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-16);
+  }
+
+  .price-figure {
+    font-family: var(--font-mono);
+    font-size: var(--size-h2);
+    line-height: var(--leading-h2);
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .price-unit {
+    font-size: var(--size-small);
+    line-height: var(--leading-small);
+    color: var(--ink-2);
+  }
+
+  .price-pending {
+    border-top: var(--border);
+    border-bottom: var(--border);
+    padding: var(--space-16) 0;
+    color: var(--ink-2);
+  }
+
+  .plain {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .plain li {
+    border-top: var(--border);
+    padding: var(--space-8) 0;
+  }
+
+  .plain li:last-child {
+    border-bottom: var(--border);
+  }
+
+  .bakeoff-form fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0 0 var(--space-40);
+  }
+
+  .bakeoff-form legend {
+    font-family: var(--font-sans);
+    font-size: var(--size-h3);
+    line-height: var(--leading-h3);
+    font-weight: var(--weight-semibold);
+    color: var(--ink);
+    padding: 0;
+    margin-bottom: var(--space-8);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-8);
+    margin-top: var(--space-16);
+  }
+
+  .field label {
+    font-size: var(--size-small);
+    line-height: var(--leading-small);
+    color: var(--ink-2);
+  }
+
+  .field input {
+    width: 100%;
+    max-width: 44ch;
+    font-family: var(--font-mono);
+    font-size: var(--size-data);
+    line-height: var(--leading-data);
+  }
+
+  .field-note {
+    font-size: var(--size-small);
+    line-height: var(--leading-small);
+    color: var(--ink-2);
+  }
+
+  .disclosure {
+    border: var(--border);
+    background-color: var(--field);
+    padding: var(--space-16);
+  }
+
+  .submit {
+    margin-top: var(--space-24);
+  }
+</style>

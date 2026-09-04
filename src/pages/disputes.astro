@@ -1,0 +1,164 @@
+---
+// Disputes - document 03, "/disputes".
+//
+// Every dispute received, its date, the cluster, the claim, the response, and
+// the outcome. Including the ones Crosspeel lost. Document 01, cross-register
+// constant: wrongness is content, not risk.
+//
+// The empty state is written as direction, not apology.
+import Layout from '../layouts/Layout.astro';
+import corpusJson from '../data/corpus.json';
+
+interface Dispute {
+  id: string;
+  received_at?: string | null;
+  claimant?: string | null;
+  claim?: string | null;
+  response?: string | null;
+  outcome?: string | null;
+  cluster_slug?: string | null;
+  cluster_id?: string | null;
+}
+
+interface Corpus {
+  observed_through: string | null;
+  disputes: Dispute[];
+}
+
+const corpus = corpusJson as unknown as Corpus;
+
+const dateOnly = (value?: string | null) =>
+  typeof value === 'string' && value.length >= 10 ? value.slice(0, 10) : null;
+
+const observedThrough = dateOnly(corpus.observed_through);
+
+const disputes = [...(corpus.disputes ?? [])].sort((a, b) =>
+  String(b.received_at ?? '').localeCompare(String(a.received_at ?? '')),
+);
+---
+
+<Layout
+  title="Disputes"
+  description="Every dispute Crosspeel has received, its claim, its response, and its outcome."
+  observed={observedThrough}
+  width="prose"
+>
+  <h1>Disputes</h1>
+
+  <div class="prose">
+    <p>
+      Every dispute received is recorded here with the date it arrived, the cluster it concerns,
+      the claim as it was made, the response, and the outcome. Disputes are published whatever the
+      outcome, including the ones where the finding was amended or withdrawn. The finding stays
+      published next to the dispute rather than being taken down while it is argued.
+    </p>
+    <p class="route">
+      To dispute a finding, write to
+      <a href="mailto:disputes@crosspeel.com">disputes@crosspeel.com</a> with the endpoint URL and
+      what you believe is inaccurate.
+    </p>
+
+    {disputes.length > 0 ? (
+      <ol class="dispute-list">
+        {disputes.map((dispute) => (
+          <li class="dispute">
+            <p class="dispute-meta">
+              <span class="dispute-date">{dateOnly(dispute.received_at) ?? 'date not recorded'}</span>
+              {dispute.cluster_slug ? (
+                <a href={`/clusters/${dispute.cluster_slug}`}>cluster {dispute.cluster_slug}</a>
+              ) : (
+                <span class="data">cluster {dispute.cluster_id ?? 'not recorded'}</span>
+              )}
+              <span class="data">outcome: {dispute.outcome ?? 'open'}</span>
+            </p>
+            <h2 class="dispute-claimant">{dispute.claimant ?? 'claimant not recorded'}</h2>
+            <h3>The claim</h3>
+            <p>{dispute.claim ?? 'The claim was not recorded.'}</p>
+            <h3>The response</h3>
+            <p>{dispute.response ?? 'No response has been published yet.'}</p>
+            <p class="micro">{dispute.id}</p>
+          </li>
+        ))}
+      </ol>
+    ) : (
+      <p class="empty">
+        No disputes have been received. Every dispute that arrives is published on this page
+        alongside the finding it concerns, whatever the outcome.
+      </p>
+    )}
+  </div>
+</Layout>
+
+<style>
+  h1 {
+    margin-bottom: var(--space-24);
+  }
+
+  .route {
+    font-size: var(--size-small);
+    line-height: var(--leading-small);
+    color: var(--ink-2);
+  }
+
+  .route a {
+    color: var(--ink-2);
+  }
+
+  .dispute-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .dispute {
+    border-top: var(--border);
+    padding-top: var(--space-24);
+    padding-bottom: var(--space-24);
+  }
+
+  .dispute:last-child {
+    border-bottom: var(--border);
+  }
+
+  .dispute-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-24);
+    font-size: var(--size-small);
+    line-height: var(--leading-small);
+    color: var(--ink-2);
+    margin-bottom: var(--space-8);
+  }
+
+  .dispute-meta a {
+    color: var(--ink-2);
+  }
+
+  .dispute-date {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dispute-claimant {
+    font-size: var(--size-h3);
+    line-height: var(--leading-h3);
+    margin-bottom: var(--space-16);
+  }
+
+  .dispute h3 {
+    font-size: var(--size-small);
+    line-height: var(--leading-small);
+    color: var(--ink-2);
+    font-weight: var(--weight-regular);
+    margin-top: var(--space-16);
+  }
+
+  .dispute p {
+    margin-top: var(--space-8);
+  }
+
+  .empty {
+    border: var(--border);
+    background-color: var(--field);
+    padding: var(--space-24);
+  }
+</style>

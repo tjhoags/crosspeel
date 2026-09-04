@@ -1,0 +1,344 @@
+---
+// Home - document 03, "Home".
+//
+// Above the fold is the diff pane, not prose. Then the three paragraphs from
+// document 03, verbatim. Then four live figures as tabular rows, no cards.
+// Then the most recent five clusters as cluster rows, and a link to the index.
+// No testimonials, no logo bar, no pricing table.
+//
+// Every figure is read from src/data/corpus.json at build. The site never
+// queries D1 at runtime - document 02, routes. A figure that is zero displays as
+// zero. No placeholder figure ever ships.
+import Layout from '../layouts/Layout.astro';
+import DiffPane from '../components/DiffPane.astro';
+import ClusterRow from '../components/ClusterRow.astro';
+import corpusJson from '../data/corpus.json';
+
+interface DiffEndpoint {
+  endpoint_id: string | number;
+  hostname: string;
+  operator_name?: string | null;
+  url?: string | null;
+}
+
+interface DiffField {
+  field: string;
+  values: Record<string, unknown>;
+  identical: boolean;
+}
+
+interface FeaturedDiff {
+  members?: DiffEndpoint[] | null;
+  left?: DiffEndpoint | null;
+  right?: DiffEndpoint | null;
+  fields?: DiffField[] | null;
+  matched_fields?: number | null;
+  compared_fields?: number | null;
+  observed_at?: string | null;
+  cluster_slug?: string | null;
+  spread_multiple?: number | null;
+}
+
+interface ClusterSummary {
+  slug: string;
+  capability?: string | null;
+  confidence?: string | null;
+  min_price_usd?: number | null;
+  max_price_usd?: number | null;
+  spread_multiple?: number | null;
+  last_updated?: string | null;
+  members?: unknown[] | null;
+  member_count?: number | null;
+}
+
+interface Corpus {
+  observed_through: string | null;
+  stats: {
+    endpoints_observed: number;
+    clusters_published: number;
+    widest_spread_multiple: number;
+    last_probe_run: string | null;
+  };
+  clusters: ClusterSummary[];
+  featured_diff: FeaturedDiff | null;
+}
+
+const corpus = corpusJson as unknown as Corpus;
+const stats = corpus.stats;
+
+const dateOnly = (value?: string | null) =>
+  typeof value === 'string' && value.length >= 10 ? value.slice(0, 10) : null;
+
+const observedThrough = dateOnly(corpus.observed_through);
+
+// The featured pane. The export may carry the two endpoints as a members array
+// or as left and right; both are read so a shape change on the engine side does
+// not silently blank the home page.
+const featured = corpus.featured_diff ?? null;
+const featuredMembers: DiffEndpoint[] = featured
+  ? Array.isArray(featured.members) && featured.members.length > 0
+    ? featured.members
+    : ([featured.left, featured.right].filter(Boolean) as DiffEndpoint[])
+  : [];
+
+const diffLeft = featuredMembers[0] ?? null;
+const diffRight = featuredMembers[1] ?? null;
+const diffFields: DiffField[] =
+  featured && Array.isArray(featured.fields) ? featured.fields : [];
+const paneRenders = Boolean(diffLeft && diffRight && diffFields.length > 0);
+
+const diffMatched =
+  typeof featured?.matched_fields === 'number'
+    ? featured.matched_fields
+    : diffFields.filter((row) => row.identical).length;
+const diffCompared =
+  typeof featured?.compared_fields === 'number' ? featured.compared_fields : diffFields.length;
+const diffObservedAt = featured?.observed_at ?? null;
+const diffObservedDate = dateOnly(diffObservedAt);
+const diffClusterSlug = featured?.cluster_slug ?? null;
+const diffSpread =
+  typeof featured?.spread_multiple === 'number' && Number.isFinite(featured.spread_multiple)
+    ? featured.spread_multiple
+    : null;
+
+// The pane header from document 03: "Two vendors. 41 of 43 response fields
+// identical. One charges 4.20x more." The pane compares two endpoints, so the
+// count is spelled where it is two and rendered as a figure otherwise. The
+// price clause is omitted where no spread was observed, rather than invented.
+const vendorCount = featuredMembers.length;
+const vendorClause = vendorCount === 2 ? 'Two vendors.' : `${vendorCount} vendors.`;
+const spreadClause = diffSpread && diffSpread > 1 ? `One charges ${diffSpread.toFixed(2)}x more.` : null;
+const paneHeader = [
+  vendorClause,
+  `${diffMatched} of ${diffCompared} response fields identical.`,
+  spreadClause,
+]
+  .filter(Boolean)
+  .join(' ');
+
+// The four live figures. Zero displays as zero.
+const figures = [
+  {
+    label: 'Endpoints observed',
+    value: String(stats.endpoints_observed),
+    href: stats.endpoints_observed > 0 ? '/endpoints' : null,
+  },
+  {
+    label: 'Clusters published',
+    value: String(stats.clusters_published),
+    href: stats.clusters_published > 0 ? '/clusters' : null,
+  },
+  {
+    label: 'Widest price spread',
+    value: `${Number(stats.widest_spread_multiple).toFixed(2)}x`,
+    href: stats.widest_spread_multiple > 0 ? '/clusters' : null,
+  },
+  {
+    label: 'Last probe run',
+    value: dateOnly(stats.last_probe_run) ?? 'not yet run',
+    href: null,
+  },
+];
+
+const recentClusters = [...(corpus.clusters ?? [])]
+  .sort((a, b) => String(b.last_updated ?? '').localeCompare(String(a.last_updated ?? '')))
+  .slice(0, 5);
+---
+
+<Layout
+  title="Home"
+  description="Crosspeel measures whether independently branded machine-payable API endpoints are actually independent."
+  observed={observedThrough}
+  width="full"
+>
+  <section class="fold" aria-label="Observed field comparison">
+    {paneRenders ? (
+      <Fragment>
+        <p class="pane-header">{paneHeader}</p>
+        <DiffPane
+          left={diffLeft}
+          right={diffRight}
+          fields={diffFields}
+          matchedFields={diffMatched}
+          comparedFields={diffCompared}
+          observedAt={diffObservedAt}
+          clusterSlug={diffClusterSlug}
+        />
+        <p class="pane-foot">
+          {diffObservedDate ? <span>Observed {diffObservedDate}.</span> : null}
+          {diffClusterSlug ? (
+            <a href={`/clusters/${diffClusterSlug}`}>The cluster page carries the evidence.</a>
+          ) : null}
+        </p>
+      </Fragment>
+    ) : (
+      <p class="fold-empty">
+        No cluster is published yet. The method is published at <a href="/method">/method</a> in
+        the meantime.
+      </p>
+    )}
+  </section>
+
+  <section class="argument prose" aria-label="What Crosspeel does">
+    <p>
+      Crosspeel pays machine-payable API endpoints and records what comes back - certificate
+      issuers, header order, field names, error strings, timing, and price.
+    </p>
+    <p>
+      Endpoints that share an origin agree on details their operators never thought to vary.
+      Crosspeel finds those agreements and publishes them, with the evidence and the price
+      difference attached.
+    </p>
+    <p>
+      This does not observe ownership, contracts, or intent. It observes responses. Where two
+      endpoints respond identically and price differently, that is what gets published, and the
+      operators are invited to dispute it.
+    </p>
+  </section>
+
+  <section class="figures" aria-label="Corpus figures">
+    <table class="figure-table">
+      <caption>Read from the corpus at build. A figure that is zero displays as zero.</caption>
+      <tbody>
+        {figures.map((figure) => (
+          <tr>
+            <th scope="row">{figure.label}</th>
+            <td class="figure-value">
+              {figure.href ? <a href={figure.href}>{figure.value}</a> : figure.value}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="recent" aria-label="Most recent clusters">
+    <h2>Most recent clusters</h2>
+    {recentClusters.length > 0 ? (
+      <table class="cluster-table">
+        <thead>
+          <tr>
+            <th scope="col">Cluster</th>
+            <th scope="col">Members</th>
+            <th scope="col">Capability</th>
+            <th scope="col">Observed price range</th>
+            <th scope="col">Spread</th>
+            <th scope="col">Last observed</th>
+            <th scope="col">Confidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          {recentClusters.map((cluster) => (
+            <ClusterRow cluster={cluster} />
+          ))}
+        </tbody>
+      </table>
+    ) : (
+      <p class="recent-empty">No clusters published yet.</p>
+    )}
+    <p class="recent-link"><a href="/clusters">The cluster index is at /clusters.</a></p>
+  </section>
+</Layout>
+
+<style>
+  .fold {
+    margin-bottom: var(--space-64);
+  }
+
+  .pane-header {
+    font-family: var(--font-sans);
+    font-size: var(--size-h2);
+    line-height: var(--leading-h2);
+    font-weight: var(--weight-semibold);
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: var(--space-16);
+    max-width: var(--measure);
+  }
+
+  .pane-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-24);
+    margin-top: var(--space-8);
+    font-size: var(--size-small);
+    line-height: var(--leading-small);
+    color: var(--ink-2);
+  }
+
+  .pane-foot a {
+    color: var(--ink-2);
+  }
+
+  .fold-empty {
+    max-width: var(--measure);
+    border: var(--border);
+    background-color: var(--field);
+    padding: var(--space-24);
+  }
+
+  .argument {
+    margin-bottom: var(--space-64);
+  }
+
+  .figures {
+    margin-bottom: var(--space-64);
+  }
+
+  .figure-table {
+    max-width: var(--measure);
+  }
+
+  .figure-table caption {
+    caption-side: bottom;
+    padding-top: var(--space-8);
+    padding-bottom: 0;
+  }
+
+  .figure-table th {
+    font-family: var(--font-sans);
+    font-weight: var(--weight-regular);
+    font-size: var(--size-body);
+    line-height: var(--leading-body);
+    color: var(--ink);
+    padding-left: 0;
+  }
+
+  .figure-value {
+    text-align: right;
+    font-size: var(--size-body);
+    line-height: var(--leading-body);
+    padding-right: 0;
+    white-space: nowrap;
+  }
+
+  .recent h2 {
+    margin-bottom: var(--space-16);
+  }
+
+  .cluster-table thead th {
+    padding-left: 0;
+    padding-right: var(--space-16);
+    padding-bottom: var(--space-8);
+    text-align: left;
+  }
+
+  .recent-empty {
+    color: var(--ink-2);
+    max-width: var(--measure);
+  }
+
+  .recent-link {
+    margin-top: var(--space-16);
+    font-size: var(--size-small);
+    line-height: var(--leading-small);
+  }
+
+  @media (max-width: 640px) {
+    .cluster-table,
+    .figure-table {
+      display: block;
+      overflow-x: auto;
+    }
+  }
+</style>

@@ -1,0 +1,303 @@
+---
+// MCP - document 03, "/mcp", and document 05.
+//
+// Install instructions, the tool schema, what it returns, what it costs per
+// call, and the payment envelope. Written for someone configuring an agent, not
+// someone being sold to.
+//
+// Integration points, both owned elsewhere:
+//   - The server address is published at runbook step F1 and read from
+//     corpus.mcp.endpoint. Until it is exported it is not stated here, because
+//     an address that does not resolve is worse than no address.
+//   - The receiving wallet address is runbook gate F2 and requires a human. No
+//     address is rendered on this page before that gate.
+import Layout from '../layouts/Layout.astro';
+import corpusJson from '../data/corpus.json';
+
+interface McpConfig {
+  endpoint?: string | null;
+  facilitator?: string | null;
+  prices?: { depth: string; price_usd: number }[] | null;
+}
+
+interface Corpus {
+  mcp?: McpConfig | null;
+}
+
+const corpus = corpusJson as unknown as Corpus;
+const mcp = corpus.mcp ?? null;
+
+const endpoint = typeof mcp?.endpoint === 'string' && mcp.endpoint.length > 0 ? mcp.endpoint : null;
+const facilitator =
+  typeof mcp?.facilitator === 'string' && mcp.facilitator.length > 0 ? mcp.facilitator : null;
+const prices = Array.isArray(mcp?.prices) ? mcp!.prices! : [];
+
+const installConfig = endpoint
+  ? `{
+  "mcpServers": {
+    "crosspeel": {
+      "url": "${endpoint}"
+    }
+  }
+}`
+  : null;
+
+// Schemas from document 05, verbatim. Held as strings so the braces render as
+// text rather than as template expressions.
+const checkStackSchema = `input:
+  endpoints  string[]   2 to 12 URLs
+  depth      string     "cached" | "live"   default "cached"
+
+output:
+  checked_at        string
+  depth             string
+  groups            [ { endpoint_ids: string[],
+                        matched_fields: int,
+                        compared_fields: int,
+                        confidence: string } ]
+  unmatched         string[]
+  prices            [ { endpoint: string,
+                        price_usd: number,
+                        multiple_vs_cheapest: number,
+                        observed_at: string } ]
+  cheapest_in_group [ { group: int, endpoint: string } ]
+  coverage          { known: int, unknown: int }
+  limits            string[]`;
+
+const paymentEnvelope = `protocol   x402 over HTTP
+asset      USDC
+chain      Base mainnet
+chain_id   eip155:8453`;
+---
+
+<Layout
+  title="MCP"
+  description="The Crosspeel MCP server: tools, response format, cost per call, and payment envelope."
+  width="full"
+>
+  <h1>MCP</h1>
+
+  <div class="prose">
+    <p>
+      An MCP server an agent calls mid-run to ask whether the endpoints it is about to use are
+      duplicates of each other.
+    </p>
+    <p>
+      MCP - Model Context Protocol - is the tool-calling standard. It is not a payment protocol.
+      Payment for this server is handled by x402 at the transport layer, in USDC on Base. There is
+      no package to install, no key to obtain, and no account to create.
+    </p>
+  </div>
+
+  <section class="block">
+    <h2>Install</h2>
+    {installConfig ? (
+      <div class="prose">
+        <p>One configuration entry:</p>
+      </div>
+    ) : null}
+    {installConfig ? (
+      <pre><code>{installConfig}</code></pre>
+    ) : (
+      <div class="prose">
+        <p class="pending">
+          The server address is published here when the server is deployed. Nothing on this page is
+          installable before then. The tool schemas, the response format, and the payment envelope
+          below are final and can be read against now.
+        </p>
+      </div>
+    )}
+  </section>
+
+  <section class="block">
+    <h2>Tools</h2>
+
+    <h3><span class="data">check_stack</span></h3>
+    <div class="prose">
+      <p>
+        The primary tool. Given 2 to 12 endpoint URLs, it returns the groups that returned
+        identical responses, the endpoints that matched nothing, the observed price of each, and
+        which member of each group is cheapest.
+      </p>
+      <p>
+        <span class="data">cached</span> answers from the existing corpus only, costs less, and
+        returns immediately. <span class="data">live</span> triggers a probe run, costs more, takes
+        longer, and adds to the corpus.
+      </p>
+    </div>
+    <pre><code>{checkStackSchema}</code></pre>
+
+    <h3><span class="data">get_cluster</span></h3>
+    <div class="prose">
+      <p>
+        Given an endpoint URL, returns its cluster if it has one, with the member list, the price
+        range, the spread multiple, the confidence, and the URL of the public evidence page.
+      </p>
+    </div>
+
+    <h3><span class="data">cheapest_equivalent</span></h3>
+    <div class="prose">
+      <p>
+        Given an endpoint URL, returns the cheapest observed member of its cluster with the price
+        difference and the date that price was observed. Where no cluster exists it returns
+        nothing rather than a guess.
+      </p>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>What the response guarantees</h2>
+    <div class="prose">
+      <p>
+        These hold on every call. An agent acts on the response without a human reading it, so they
+        are enforced in the server rather than left to convention.
+      </p>
+      <ul class="plain">
+        <li>
+          A match is never returned at <span class="data">confidence: low</span>. The endpoints are
+          returned as unmatched, with the reason.
+        </li>
+        <li>
+          Every price carries <span class="data">observed_at</span>. A stale price acted on
+          automatically is a real cost to the caller.
+        </li>
+        <li>
+          <span class="data">coverage</span> is always present, so an absence of duplication can be
+          told apart from an absence of data. An endpoint that has never been observed is reported
+          as unknown rather than as clean.
+        </li>
+        <li>
+          <span class="data">limits</span> is always present and carries the four things the method
+          cannot see, in full, in every payload. They are also published at{' '}
+          <a href="/method">/method</a>.
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>What it costs per call</h2>
+    <div class="prose">
+      {prices.length > 0 ? (
+        <table class="price-table">
+          <thead>
+            <tr>
+              <th scope="col">Depth</th>
+              <th scope="col">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {prices.map((row) => (
+              <tr>
+                <td><span class="data">{row.depth}</span></td>
+                <td class="price-cell">{row.price_usd.toFixed(2)} USD</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p class="pending">
+          The per-call price is quoted in the x402 payment challenge the server returns, so a
+          caller reads it at the moment of the call rather than from this page. The
+          <span class="data"> cached</span> depth is priced below the <span class="data">live</span>
+          depth, which carries the cost of the probe run it triggers. Both figures are set from the
+          measured price census rather than chosen.
+        </p>
+      )}
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Payment envelope</h2>
+    <pre><code>{paymentEnvelope}</code></pre>
+    <div class="prose">
+      {facilitator ? (
+        <p>
+          The facilitator is <span class="data">{facilitator}</span>. The receiving address is
+          published here once it is set. No payment is quoted against an address this page has not
+          stated.
+        </p>
+      ) : (
+        <p>
+          The facilitator is stated here once it is confirmed at deployment. The receiving address
+          is published here once it is set. No payment is quoted against an address this page has
+          not stated.
+        </p>
+      )}
+      <p>
+        Payment is per call at the transport layer. A caller that does not pay receives a 402 with
+        the quote and no data.
+      </p>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>What is public and what is not</h2>
+    <div class="prose">
+      <p>
+        The client, the tool schemas, and the response format are in the public repository. The
+        comparison engine and the corpus are not. The method is published at{' '}
+        <a href="/method">/method</a> and the findings it produces are at{' '}
+        <a href="/clusters">/clusters</a>.
+      </p>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  h1 {
+    margin-bottom: var(--space-24);
+  }
+
+  .block {
+    margin-top: var(--space-40);
+  }
+
+  .block h2 {
+    margin-bottom: var(--space-16);
+  }
+
+  .block h3 {
+    margin-top: var(--space-24);
+    margin-bottom: var(--space-8);
+  }
+
+  .block pre {
+    margin-top: var(--space-16);
+  }
+
+  .plain {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .plain li {
+    border-top: var(--border);
+    padding: var(--space-8) 0;
+  }
+
+  .plain li:last-child {
+    border-bottom: var(--border);
+  }
+
+  .pending {
+    color: var(--ink-2);
+  }
+
+  .price-table {
+    max-width: var(--measure);
+  }
+
+  .price-table th,
+  .price-table td {
+    padding-left: 0;
+  }
+
+  .price-cell {
+    font-family: var(--font-mono);
+    font-size: var(--size-data);
+    line-height: var(--leading-data);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

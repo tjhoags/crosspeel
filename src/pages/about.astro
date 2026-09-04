@@ -1,0 +1,84 @@
+---
+// About - document 03, "/about". Short.
+//
+// Register split, document 07: the paragraphs describing what Crosspeel is are
+// Register D with no byline. The bio paragraph is the one place on the site
+// where Tom Hogan's own voice is correct, and it carries his name.
+//
+// NOTE FOR REVIEW BEFORE G1. The biographical facts in that paragraph - the
+// fund, its wind-down, and the month - are not stated in any of the ten
+// specification documents. They are drafted from project context and need Tom's
+// confirmation before publication. Nothing else on this page depends on them.
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="About"
+  description="What Crosspeel is, who operates it, and how it is funded."
+  width="prose"
+>
+  <h1>About</h1>
+
+  <div class="prose">
+    <p>
+      Crosspeel measures whether independently branded machine-payable API endpoints are actually
+      independent.
+    </p>
+    <p>
+      It pays each endpoint, records what comes back, and compares the records. Endpoints that
+      share an origin agree on details their operators never thought to vary - the wording of an
+      error, the order of the keys, the issuer of the certificate, the way a date is written.
+      Where those agreements hold and the prices differ, the finding is published with its
+      evidence attached and the operators are invited to dispute it.
+    </p>
+    <p>
+      Crosspeel does not observe ownership, contracts, or intent. It observes responses. What the
+      method cannot see is published at <a href="/method">/method</a>, next to what it can.
+    </p>
+
+    <h2>Who operates it</h2>
+    <p class="bio">
+      I ran a long-short equity fund for two years and wound it down in August 2026. It closed up
+      on the year and it closed anyway, because the assets under management never reached the size
+      where the arithmetic worked. What stayed with me was the data bill. Four vendors, four
+      invoices, and no way to tell from the outside how many sources I was actually paying for.
+      Crosspeel is that question asked again in a market where the buyer is software, the invoices
+      are fractions of a cent, and nobody is reading them at all.
+    </p>
+    <p class="byline">
+      <a href="https://tomhogan.io" rel="noopener">Tom Hogan</a>
+    </p>
+
+    <h2>How it is funded</h2>
+    <p>
+      Crosspeel is funded by <a href="/bakeoff">Bakeoff</a> fees and <a href="/mcp">MCP</a> call
+      fees. There is no advertising, no sponsorship, and no paid placement.
+    </p>
+    <p class="fixed-line">
+      No endpoint can pay to be listed, delisted, ranked, or unranked. There is no mechanism to do
+      so and there will not be one.
+    </p>
+  </div>
+</Layout>
+
+<style>
+  h1 {
+    margin-bottom: var(--space-24);
+  }
+
+  .byline {
+    font-size: var(--size-small);
+    line-height: var(--leading-small);
+    color: var(--ink-2);
+  }
+
+  .byline a {
+    color: var(--ink-2);
+  }
+
+  .fixed-line {
+    border-top: var(--border);
+    border-bottom: var(--border);
+    padding: var(--space-16) 0;
+  }
+</style>

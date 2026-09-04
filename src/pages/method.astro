@@ -1,0 +1,312 @@
+---
+// Method - document 03, "/method".
+//
+// Prose width. The clustering method from document 02, written for a reader who
+// does not write code. Then "What this cannot see" with the four limits from
+// document 02 verbatim, per house rule five. Then the anti-gaming section,
+// stated openly. Then a version history.
+//
+// NOTE FOR REVIEW BEFORE G1. The first of the four limits contains one of the
+// words document 07 bans on every product surface. It appears there inside a
+// denial - the limit says the finding is not that relationship - and document 02
+// requires the four limits verbatim. The verbatim requirement is the more
+// specific instruction and is what is implemented here. The conflict is recorded
+// in crosspeel-engine/DECISIONS.md and needs a decision at G1.
+import Layout from '../layouts/Layout.astro';
+import corpusJson from '../data/corpus.json';
+
+interface Corpus {
+  method_version: string;
+}
+
+const corpus = corpusJson as unknown as Corpus;
+const methodVersion = corpus.method_version;
+
+// The discriminating field set, document 02, clustering method version 1 step 2.
+const discriminatingFields = [
+  { field: 'error_string', gloss: 'the wording of an error, character for character' },
+  { field: 'key_order_hash', gloss: 'the order the keys came back in' },
+  { field: 'field_paths_hash', gloss: 'the full set of field names and their nesting' },
+  { field: 'header_order', gloss: 'the order the response headers arrived in' },
+  { field: 'server_header', gloss: 'what the server calls itself' },
+  { field: 'tls_issuer', gloss: 'who issued the certificate the server presented' },
+  { field: 'ja4_fingerprint', gloss: 'the exact shape of the encrypted handshake' },
+  { field: 'timestamp_format', gloss: 'how the response writes a date' },
+  { field: 'float_precision_max', gloss: 'how many decimal places a number carries' },
+  { field: 'null_vs_omitted', gloss: 'which fields come back empty rather than missing' },
+];
+
+// The four limits from document 02, "What the method cannot see". Verbatim.
+const limits = [
+  'Two operators independently using the same upstream vendor will cluster. That is a shared dependency, not a reseller relationship, and Crosspeel cannot distinguish them from the outside.',
+  'Two operators running the same open-source template will cluster.',
+  'An operator who deliberately randomises key order and error wording will not cluster, and Crosspeel will not detect that they are avoiding detection.',
+  'Nothing here observes ownership, contracts, or intent. The findings are about responses, not companies.',
+];
+
+// Version history. There is no method_history array in the build-time data
+// contract, so the changelog is held here and the current version is read from
+// the corpus. Recorded as an integration point in the D3 return.
+const versionHistory = [
+  {
+    version: 'v1',
+    changed:
+      'First version. Exact matching over the ten discriminating fields, with verbatim error-string agreement required before a group is published.',
+    date: '2026-09-04',
+  },
+];
+---
+
+<Layout
+  title="Method"
+  description="How Crosspeel groups endpoints, what it measures, and what the method cannot see."
+  width="prose"
+>
+  <h1>Method</h1>
+
+  <div class="prose">
+    <p>
+      Two endpoints that share an origin cannot help but agree on details their operators never
+      thought to vary. The method looks for those agreements, measures how many of them hold, and
+      compares the prices of the endpoints that hold them.
+    </p>
+    <p>
+      Nothing in the method reads a contract, a company registration, or a statement of intent.
+      It reads responses.
+    </p>
+
+    <h2>What gets captured</h2>
+    <p>
+      Every endpoint is paid for and called. Everything below is recorded on every call, whether
+      or not the current finding uses it, because an observation not taken today cannot be taken
+      later.
+    </p>
+    <ul class="plain">
+      <li>
+        The TLS certificate - the credential a server presents to prove it is the host it claims
+        to be - including who issued it and when it expires, and the JA4 fingerprint, which is a
+        short summary of the exact way the server negotiates an encrypted connection.
+      </li>
+      <li>
+        The response headers: what the server calls itself, which version of HTTP it speaks, the
+        order the headers arrived in, how the body was compressed, and any caching or rate-limit
+        headers.
+      </li>
+      <li>
+        The network the server sits on, identified by its ASN - the number assigned to the block
+        of addresses an operator or hosting provider runs.
+      </li>
+      <li>
+        Time to first byte, recorded separately from total time. The first is how long the server
+        took to start answering; the second is how long the whole answer took.
+      </li>
+      <li>
+        Clock skew - how far the server's own clock sits from true time.
+      </li>
+      <li>
+        The shape of the body: the exact field names, the order the keys came back in, which
+        fields arrive empty rather than missing, how many decimal places a number carries, how a
+        date is written, and the character encoding.
+      </li>
+      <li>
+        The wording of an error, character for character, and whether an error is returned as
+        valid JSON at all.
+      </li>
+      <li>
+        Redirect behaviour, and what the endpoint does with a conditional request.
+      </li>
+      <li>
+        The payment envelope: the chain, the facilitator, and the denomination the price is quoted
+        in.
+      </li>
+    </ul>
+
+    <h2>How endpoints are grouped</h2>
+    <p>
+      This is method version <span class="data">{methodVersion}</span>. Every published cluster
+      records the version it was produced under, so a later change to the method does not silently
+      rewrite what was published before it.
+    </p>
+    <ol class="steps">
+      <li>
+        Endpoints are grouped by the capability their operator advertises. Comparison happens
+        inside a group and never across groups.
+      </li>
+      <li>
+        Inside a group, every pair of endpoints is scored on how often the pair agrees across a
+        fixed set of ten fields.
+      </li>
+      <li>
+        A pair becomes a candidate at 90.00 percent agreement or higher, across at least 30 paired
+        observations, each using a different probe input. A paired observation is one input sent
+        to both endpoints and the two answers compared. The inputs are deliberately varied and
+        deliberately odd, because coincidental agreement on an ordinary input is common and
+        coincidental agreement on thirty strange ones is not.
+      </li>
+      <li>
+        A candidate is published only when the error wording matches character for character on at
+        least three different inputs chosen to produce an error. Error-string agreement is
+        necessary rather than merely contributory - an error message is the part of a service
+        nobody rewrites when they rebrand it.
+      </li>
+      <li>
+        Confidence is <span class="data">high</span> at 30 or more paired observations with a
+        verbatim error match, <span class="data">moderate</span> at 15 to 29, and
+        <span class="data">low</span> below 15. Low-confidence groups are stored and never
+        published.
+      </li>
+      <li>
+        Inside a published group, the cheapest observed member is the one nearest the origin. The
+        distance between the cheapest and the most expensive is the spread, stated as a multiple.
+        Every price carries the date it was observed.
+      </li>
+    </ol>
+
+    <h3>The ten fields</h3>
+    <p>The discriminating set a pair is scored on:</p>
+    <table class="fields-table">
+      <thead>
+        <tr>
+          <th scope="col">Field</th>
+          <th scope="col">What it holds</th>
+        </tr>
+      </thead>
+      <tbody>
+        {discriminatingFields.map((row) => (
+          <tr>
+            <td class="field-name"><span class="data">{row.field}</span></td>
+            <td class="field-gloss">{row.gloss}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    <h3>The thresholds are starting values</h3>
+    <p>
+      The 90.00 percent agreement threshold and the 30-observation minimum were chosen by hand
+      before the first run. They are tuned against real data and the tuned values are recorded
+      here with the date they changed. Confidence in the current values: low.
+    </p>
+
+    <h2>What this cannot see</h2>
+    <ul class="plain">
+      {limits.map((limit) => (
+        <li>{limit}</li>
+      ))}
+    </ul>
+
+    <h2>Rotation, cadence, and publication lag</h2>
+    <p>
+      Publishing how the probes are scheduled is not a leak. An operator who knows a probe is
+      coming, but not when, and knows a finding is held back, but not for how long, is deterred by
+      the same facts that would otherwise be a weakness.
+    </p>
+    <ul class="plain">
+      <li>
+        The wallet that pays for probes is rotated between runs. A single address that appears
+        shortly before every publication is trivially blocked.
+      </li>
+      <li>
+        Probe runs are not on a fixed cadence. The interval is randomised inside the scheduling
+        window.
+      </li>
+      <li>
+        A finding is published at least seven days behind the observations that support it.
+      </li>
+      <li>
+        Everything is stored whether or not it is published. An endpoint whose field order changes
+        within days of a publication has been observed changing it, and that observation is kept
+        too.
+      </li>
+    </ul>
+
+    <h2>Version history</h2>
+    <table class="version-table">
+      <thead>
+        <tr>
+          <th scope="col">Version</th>
+          <th scope="col">What changed</th>
+          <th scope="col">Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {versionHistory.map((row) => (
+          <tr>
+            <td class="version-id"><span class="data">{row.version}</span></td>
+            <td>{row.changed}</td>
+            <td class="version-date">{row.date}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</Layout>
+
+<style>
+  h1 {
+    margin-bottom: var(--space-24);
+  }
+
+  .plain {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .plain li {
+    border-top: var(--border);
+    padding: var(--space-8) 0;
+  }
+
+  .plain li:last-child {
+    border-bottom: var(--border);
+  }
+
+  .steps {
+    list-style: decimal;
+    padding-left: var(--space-24);
+    margin: 0;
+  }
+
+  .steps li {
+    padding: var(--space-8) 0;
+  }
+
+  .steps li::marker {
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fields-table th,
+  .version-table th {
+    padding-left: 0;
+  }
+
+  .fields-table td,
+  .version-table td {
+    padding-left: 0;
+  }
+
+  .field-name,
+  .version-id {
+    white-space: nowrap;
+  }
+
+  .field-gloss {
+    font-size: var(--size-body);
+    line-height: var(--leading-body);
+  }
+
+  .version-date {
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 640px) {
+    .fields-table,
+    .version-table {
+      display: block;
+      overflow-x: auto;
+    }
+  }
+</style>
