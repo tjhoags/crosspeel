@@ -1,0 +1,88 @@
+/* Crosspeel design tokens.
+   Source of truth: 01. Crosspeel - Design Guide, part two. Values are verbatim.
+
+   The mono rule. Mono is used for verbatim machine output only - captured headers,
+   field names, error strings, hashes, certificate issuers, endpoint hostnames,
+   prices as observed. Never for human labels, navigation, headings, or prose.
+   If a reader sees mono, they are looking at something Crosspeel captured rather
+   than something Crosspeel wrote.
+
+   Colour is semantic, not decorative. Colour means divergence. The absence of
+   colour means agreement. --delta and --delta-wash mark a diverging observed
+   value and nothing else. There are seven colours. There is no eighth - no
+   success green, no warning amber, no info blue. A finding is not good or bad,
+   it is observed.
+
+   No shadow of any kind exists in this system. Elevation is communicated by rule
+   weight and background, never by blur. */
+
+:root {
+  /* Colour - the seven values, verbatim from document 01 */
+  --page: #FAFBF9;       /* page. Near-white with a faint green-grey cast. */
+  --field: #EFF2EE;      /* surface for captured machine output */
+  --rule: #CFD6D0;       /* hairlines, table borders, dividers */
+  --ink: #14201B;        /* text. Near-black with a green cast. */
+  --ink-2: #55635C;      /* secondary text, labels, metadata */
+  --delta: #2B3A8F;      /* divergence only. The only saturated colour. */
+  --delta-wash: #E8EAF5; /* background tint behind a diverging row */
+
+  /* Type families. Self-hosted, latin subset. Faces declared in base.css. */
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Type weights. Only two are shipped. */
+  --weight-regular: 400;
+  --weight-semibold: 600;
+
+  /* Type scale, in rem on a 16px root.
+     display  2.25 / 1.15   sans 600   page titles only, one per page
+     h2       1.50 / 1.25   sans 600
+     h3       1.125 / 1.30  sans 600
+     body     1.00 / 1.55   sans 400   max 68ch measure
+     small    0.875 / 1.45  sans 400   metadata, dates, counts
+     data     0.875 / 1.40  mono 400   captured values
+     micro    0.75 / 1.40   mono 400   hashes, long identifiers */
+  --size-display: 2.25rem;
+  --leading-display: 1.15;
+
+  --size-h2: 1.50rem;
+  --leading-h2: 1.25;
+
+  --size-h3: 1.125rem;
+  --leading-h3: 1.30;
+
+  --size-body: 1.00rem;
+  --leading-body: 1.55;
+
+  --size-small: 0.875rem;
+  --leading-small: 1.45;
+
+  --size-data: 0.875rem;
+  --leading-data: 1.40;
+
+  --size-micro: 0.75rem;
+  --leading-micro: 1.40;
+
+  /* Spacing. An 8px base unit. Steps: 8, 16, 24, 40, 64, 96.
+     Expressed in rem against the same 16px root the type scale uses, so the
+     whole system scales together. Each token is named for its px value. */
+  --space-8: 0.50rem;
+  --space-16: 1.00rem;
+  --space-24: 1.50rem;
+  --space-40: 2.50rem;
+  --space-64: 4.00rem;
+  --space-96: 6.00rem;
+
+  /* Borders. 1px solid var(--rule) throughout.
+     Radius is 2px on inputs and buttons only, 0 on everything else. */
+  --border-width: 1px;
+  --border: var(--border-width) solid var(--rule);
+  --radius-control: 2px;
+  --radius: 0;
+
+  /* Layout widths.
+     Prose width 68ch - methodology, disputes, about, anything read in sentences.
+     Full width 1200px max - cluster pages, comparison tables, the index. */
+  --measure: 68ch;
+  --width-full: 1200px;
+}
