@@ -144,9 +144,15 @@ export function clusterClaim(cluster) {
   return `${head} Observed prices range from $${min} to $${max}, a spread of ${spread}x.`;
 }
 
-/** The newest observation date this page rests on, for <meta name="observed">. */
+/**
+ * The newest observation date this page rests on, for <meta name="observed">.
+ * last_updated is not a fallback for it: that is when the cluster row last
+ * changed, which is a recorded date, and a recorded date under the observed
+ * label is the substitution document 00 forbids. A published group whose
+ * members carry no evidence-bearing observation carries no observed meta.
+ */
 export function observedThrough(cluster) {
-  return cluster?.observation_window?.to || cluster?.last_updated || corpus.observed_through;
+  return cluster?.observation_window?.to ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -160,9 +166,9 @@ function cmpDesc(a, b) {
   return a < b ? 1 : -1;
 }
 
-/** Date last observed for a cluster, falling back to when the row last changed. */
+/** Date last observed for a cluster. Never the row's own change date. */
 export function lastObserved(cluster) {
-  return cluster.observation_window?.to || cluster.last_updated || null;
+  return cluster.observation_window?.to ?? null;
 }
 
 /**

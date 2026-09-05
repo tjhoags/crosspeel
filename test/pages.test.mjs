@@ -208,26 +208,30 @@ const PLACEHOLDERS = [
 // itself contain the character a grep over the repository is looking for.
 const EM_DASH = String.fromCharCode(0x2014);
 
-function wordRegex(word) {
+function wordRegex(word, labelAware = false) {
   const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   // \b does not fire next to an apostrophe, so the contraction forms are
   // bounded by hand.
-  //
+  if (!labelAware) return new RegExp(`(^|[^A-Za-z0-9'])${escaped}($|[^A-Za-z0-9'])`);
   // A hostname label is not a word. The endpoint index carries agentworld.me,
-  // x402.whisperbox.my.id and cpi-report-us.underscoredone.com, and the
-  // previous boundary read "me", "my" and "us" out of them - a top-level
-  // domain and two labels, not first person. A dot or hyphen that joins two
-  // alphanumeric runs is a label separator and is not a boundary; a dot that
-  // ends a sentence still is, so "write to me." is still a hit. The cost is a
-  // hyphen-joined compound like "tell-us-more", which no product surface
-  // writes.
+  // x402.whisperbox.my.id and cpi-report-us.underscoredone.com, and the plain
+  // boundary read "me", "my" and "us" out of them - a top-level domain and two
+  // labels, not first person. A dot or hyphen that joins two alphanumeric runs
+  // is a label separator and is not a boundary; a dot that ends a sentence
+  // still is, so "write to me." is still a hit.
+  //
+  // Only the first-person scan asks for this. The placeholder and banned-word
+  // scans keep the plain boundary on purpose: an unfilled slot reaches a page
+  // joined to its neighbours - "2026-09-undefined", "$undefined.00",
+  // "1.NaN" - and the label-aware boundary would read every one of those as a
+  // hostname and let it through.
   return new RegExp(
     `(?<![A-Za-z0-9'])(?<![A-Za-z0-9][.-])${escaped}(?![A-Za-z0-9'])(?![.-][A-Za-z0-9])`,
   );
 }
 
-function findWord(text, word, caseSensitive) {
-  const re = new RegExp(wordRegex(word).source, caseSensitive ? '' : 'i');
+function findWord(text, word, caseSensitive, labelAware = false) {
+  const re = new RegExp(wordRegex(word, labelAware).source, caseSensitive ? '' : 'i');
   const m = text.match(re);
   if (!m) return null;
   return text.slice(Math.max(0, m.index - 60), m.index + word.length + 60);
@@ -559,7 +563,7 @@ describe('D3 voice - document 07', () => {
       const t = textLoose(html);
       for (const word of FIRST_PERSON) {
         const caseSensitive = word.startsWith('I');
-        const ctx = findWord(t, word, caseSensitive);
+        const ctx = findWord(t, word, caseSensitive, true);
         if (ctx) hits.push(`${f}: "${word}" in ...${ctx}...`);
       }
     }
@@ -593,6 +597,25 @@ describe('D3 voice - document 07', () => {
     const others = allFiles.filter((f) => f.endsWith('.css') || f.endsWith('.xml'));
     const hits = others.filter((f) => fs.readFileSync(path.join(DIST, f), 'utf8').includes(EM_DASH));
     expect(hits, `em dash found in: ${hits.join(', ')}`).toEqual([]);
+  });
+
+  it('the word boundary still catches a slot joined to its neighbours', () => {
+    // The label-aware boundary exists for hostnames in the first-person scan
+    // and nowhere else. If it ever leaked into the placeholder scan these would
+    // all pass, and a home page reading "Last probe run 2026-09-undefined"
+    // would ship.
+    for (const [text, word] of [
+      ['Last probe run 2026-09-undefined', 'undefined'],
+      ['$undefined.00', 'undefined'],
+      ['a spread of 1.NaN', 'nan'],
+      ['NaN.00x', 'nan'],
+      ['price: $12.34 todo-later', 'todo'],
+    ]) {
+      expect(findWord(text, word, false), `${JSON.stringify(text)} must be caught for ${word}`).not.toBeNull();
+    }
+    // And the first-person scan's boundary does what it is for.
+    expect(findWord('agentworld.me - Crosspeel', 'me', false, true)).toBeNull();
+    expect(findWord('write to me.', 'me', false, true)).not.toBeNull();
   });
 
   it('no built page carries a placeholder or an unfilled template slot', () => {
@@ -700,11 +723,29 @@ describe('D3 home page figures - document 03', () => {
       if (c.observation_window?.from) carried.add(c.observation_window.from);
     }
 
+    // Lexicographic comparison below is sound only for one fixed shape. The
+    // data contract (src/data/README.md) says ISO 8601 UTC; this pins the
+    // exact shape every carried value and every emitted value must have.
+    const ISO_Z = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+    for (const v of carried) expect(v, `corpus carries a date outside the contract: ${v}`).toMatch(ISO_Z);
+
     for (const f of PRODUCT_PAGES()) {
       const m = raw.get(f).match(/<meta\s+name="observed"\s+content="([^"]*)"/);
+      // An endpoint page whose observations are listed derives its content from
+      // them and must say so; a cluster page likewise. Absence is only honest
+      // when there is nothing observed to name.
+      if (/^endpoints\/.+\/index\.html$/.test(f)) {
+        const slug = f.replace(/^endpoints\//, '').replace(/\/index\.html$/, '');
+        const ep = (corpus.endpoints || []).find((e) => e.slug === slug);
+        if (ep && (ep.observations || []).length > 0) {
+          expect(m, `${f} lists observations but carries no observed meta`).not.toBeNull();
+          expect(m && m[1]).toBe(ep.observations[ep.observations.length - 1].observed_at);
+        }
+      }
       if (corpus.observed_through === null) {
         expect(m, `${f} emits an observed date but the corpus has observed nothing`).toBeNull();
       } else if (m) {
+        expect(m[1], `${f} emits an observed date outside the contract`).toMatch(ISO_Z);
         // Document 02: the meta carries "the newest observation date this page
         // rests on". For an endpoint or cluster page that is that page's own
         // newest observation, which is earlier than the corpus-wide newest.

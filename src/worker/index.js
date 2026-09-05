@@ -18,13 +18,16 @@
 //
 //   Immutable. Objects are write-once - document 02, Services - so the response
 //   carries the object's own strong ETag, a year-long immutable cache, and
-//   answers conditional requests. A 404 is never cached: a key can be flushed
-//   into the bucket after a reader first asked for it.
+//   answers conditional requests in RFC 9110 order. A 404 is never cached: a
+//   key can be flushed into the bucket after a reader first asked for it. A 412
+//   is never cached either.
 //
 //   Never rendered. A stored body is a third party's response and is served as
-//   data, never as a document. HTML content types are downgraded to text/plain,
-//   every response is nosniff, and a sandboxing CSP is set so nothing served
-//   here can run as script on crosspeel.com.
+//   data, never as a document. Only a fixed set of data types is ever honoured
+//   from the object's own metadata; anything else - HTML, XML, SVG, anything a
+//   browser would lay out - is served under the key's suffix type instead, and
+//   the stored string is never echoed. Every response is nosniff under a
+//   sandboxing CSP so nothing served here can run as script on crosspeel.com.
 //
 //   No listing. The corpus names every key a reader is entitled to. A listing
 //   would name the keys the corpus withholds - the evidence behind unpublished
@@ -33,6 +36,11 @@
 const EVIDENCE_PREFIX = '/evidence/';
 const IMMUTABLE = 'public, max-age=31536000, immutable';
 const NO_STORE = 'no-store';
+
+// R2 refuses a key over 1024 bytes with an error rather than a null, and an
+// error escaping this route is a Cloudflare 1101 page instead of the route's
+// own 404. A permalink key is under 120 bytes.
+const MAX_KEY_BYTES = 1024;
 
 // Keys are written by crosspeel-engine/src/lib/store.js as
 //   raw/<endpoint uuid>/<ISO 8601 UTC>/<observation uuid>.body
@@ -43,6 +51,17 @@ const NO_STORE = 'no-store';
 // never reaches the bucket.
 const SEGMENT = '[A-Za-z0-9][A-Za-z0-9._:-]*';
 const KEY_RE = new RegExp(`^${SEGMENT}(?:/${SEGMENT})*$`);
+
+// The only content types ever honoured from an object's own metadata, mapped to
+// the exact value put on the wire. The stored string is used to choose a row
+// here and is never itself echoed, which also disposes of comma-joined values,
+// stray whitespace and case without special handling.
+const SERVABLE = new Map([
+  ['application/json', 'application/json'],
+  ['application/jsonl', 'application/jsonl; charset=utf-8'],
+  ['text/plain', 'text/plain; charset=utf-8'],
+  ['application/octet-stream', 'application/octet-stream'],
+]);
 
 const CONTENT_TYPE_BY_SUFFIX = [
   ['.headers.json', 'application/json; charset=utf-8'],
@@ -67,6 +86,7 @@ export function keyFromPath(pathname) {
     return null;
   }
   if (!key || !KEY_RE.test(key)) return null;
+  if (new TextEncoder().encode(key).length > MAX_KEY_BYTES) return null;
   // The regex already refuses a segment that starts with a dot. This is the
   // same rule stated once more in the terms a reader of this file expects.
   if (key.split('/').some((s) => s === '.' || s === '..')) return null;
@@ -74,19 +94,26 @@ export function keyFromPath(pathname) {
 }
 
 /**
- * The content type a stored artifact is served under. The stored type wins
- * where it is safe to honour; HTML is never honoured, because a stored body is
- * served as data and not as a page on this origin.
+ * The content type a stored artifact is served under. A stored type is honoured
+ * only when it is one of a fixed set of data types; everything else falls to
+ * the key's suffix, because a stored body is served as data and not as a page
+ * on this origin.
+ *
+ * Browsers use the last comma-separated member of a Content-Type value (Fetch,
+ * "extract a MIME type"), so that member decides.
+ *
  * @param {string} key
  * @param {string | null | undefined} stored the object's httpMetadata.contentType
  */
 export function contentTypeFor(key, stored) {
-  if (typeof stored === 'string' && stored.trim()) {
-    const lower = stored.toLowerCase();
-    if (lower.startsWith('text/html') || lower.startsWith('application/xhtml')) {
-      return 'text/plain; charset=utf-8';
+  if (typeof stored === 'string') {
+    const members = stored.split(',').map((m) => m.trim()).filter(Boolean);
+    const last = members[members.length - 1];
+    if (last) {
+      const essence = last.split(';')[0].trim().toLowerCase();
+      const canonical = SERVABLE.get(essence);
+      if (canonical) return canonical;
     }
-    return stored;
   }
   for (const [suffix, type] of CONTENT_TYPE_BY_SUFFIX) {
     if (key.endsWith(suffix)) return type;
@@ -104,10 +131,10 @@ function securityHeaders(headers) {
 
 function objectHeaders(key, object) {
   const headers = new Headers();
-  // Copies contentType, contentEncoding, contentDisposition, contentLanguage,
-  // cacheControl and cacheExpiry off the object. Cache-Control and Content-Type
-  // are then overwritten below: the cache policy is this route's, not the
-  // uploader's, and the content type is filtered.
+  // Copies contentEncoding, contentDisposition, contentLanguage, cacheControl
+  // and cacheExpiry off the object. Cache-Control and Content-Type are then
+  // overwritten below: the cache policy is this route's, not the uploader's,
+  // and the content type is chosen by contentTypeFor.
   if (typeof object.writeHttpMetadata === 'function') object.writeHttpMetadata(headers);
   headers.set('Content-Type', contentTypeFor(key, object.httpMetadata?.contentType));
   headers.set('Cache-Control', IMMUTABLE);
@@ -118,26 +145,36 @@ function objectHeaders(key, object) {
   return securityHeaders(headers);
 }
 
-function notFound() {
-  return new Response('No stored artifact at this key.\n', {
-    status: 404,
-    headers: securityHeaders(
-      new Headers({ 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': NO_STORE }),
-    ),
+function plain(status, body, extra = {}) {
+  const headers = new Headers({ 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': NO_STORE, ...extra });
+  return new Response(body, { status, headers: securityHeaders(headers) });
+}
+
+const notFound = () => plain(404, 'No stored artifact at this key.\n');
+const storeError = () => plain(500, 'The artifact store did not answer.\n');
+const methodNotAllowed = () => plain(405, 'Evidence is read-only.\n', { Allow: 'GET, HEAD, OPTIONS' });
+
+function etagListIncludes(list, etag) {
+  return list.split(',').some((s) => {
+    const v = s.trim();
+    return v === '*' || v === etag;
   });
 }
 
-function methodNotAllowed() {
-  return new Response('Evidence is read-only.\n', {
-    status: 405,
-    headers: securityHeaders(
-      new Headers({
-        Allow: 'GET, HEAD, OPTIONS',
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': NO_STORE,
-      }),
-    ),
-  });
+/**
+ * True when If-Match or If-Unmodified-Since, evaluated in RFC 9110 s13.2.2
+ * order, refused the request. R2 returns a body-less object for any failed
+ * precondition; which family failed decides between 412 and 304.
+ */
+function preconditionFailed(request, object) {
+  const ifMatch = request.headers.get('If-Match');
+  if (ifMatch !== null) return !etagListIncludes(ifMatch, object.httpEtag);
+  const ifUnmodified = request.headers.get('If-Unmodified-Since');
+  if (ifUnmodified !== null) {
+    const t = Date.parse(ifUnmodified);
+    return !Number.isNaN(t) && object.uploaded instanceof Date && object.uploaded.getTime() > t;
+  }
+  return false;
 }
 
 /**
@@ -159,19 +196,32 @@ export async function handleEvidence(request, env) {
   if (key === null) return notFound();
 
   if (method === 'HEAD') {
-    const head = await env.ARTIFACTS.head(key);
+    let head;
+    try {
+      head = await env.ARTIFACTS.head(key);
+    } catch {
+      return storeError();
+    }
     if (head === null) return notFound();
     return new Response(null, { status: 200, headers: objectHeaders(key, head) });
   }
 
-  // R2 evaluates If-None-Match and If-Modified-Since itself when handed the
-  // request headers. A precondition that holds comes back as an object with no
-  // body, which is a 304 with the object's own headers.
-  const object = await env.ARTIFACTS.get(key, { onlyIf: request.headers });
+  // R2 evaluates all four conditional headers when handed the request headers
+  // and returns the object without a body when any one fails.
+  let object;
+  try {
+    object = await env.ARTIFACTS.get(key, { onlyIf: request.headers });
+  } catch {
+    return storeError();
+  }
   if (object === null) return notFound();
   const headers = objectHeaders(key, object);
   if (object.body === null || object.body === undefined) {
     headers.delete('Content-Length');
+    if (preconditionFailed(request, object)) {
+      headers.set('Cache-Control', NO_STORE);
+      return new Response(null, { status: 412, headers });
+    }
     return new Response(null, { status: 304, headers });
   }
   return new Response(object.body, { status: 200, headers });

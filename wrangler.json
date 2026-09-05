@@ -19,5 +19,6 @@
       "pattern": "crosspeel.com",
       "custom_domain": true
     }
-  ]
+  ],
+  "workers_dev": true
 }
