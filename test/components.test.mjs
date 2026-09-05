@@ -251,6 +251,9 @@ const CLUSTER = {
   max_price_usd: 0.042,
   spread_multiple: 4.2,
   last_updated: '2026-09-03T11:04:00Z',
+  // The "last observed" cell is an observation date, never the row's own
+  // change date; a real cluster carries both, and the row reads this one.
+  observation_window: { from: '2026-09-03T10:00:00Z', to: '2026-09-03T11:04:00Z', distinct_inputs: 30 },
   member_count: 2,
 };
 

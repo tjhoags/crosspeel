@@ -13,6 +13,7 @@ export interface ClusterRowData {
   max_price_usd?: number | null;
   spread_multiple?: number | null;
   last_updated?: string | null;
+  observation_window?: { from?: string | null; to?: string | null } | null;
   members?: unknown[] | null;
   member_count?: number | null;
 }
@@ -45,7 +46,11 @@ const minPrice = renderable ? money(cluster!.min_price_usd) : null;
 const maxPrice = renderable ? money(cluster!.max_price_usd) : null;
 const priceRange = minPrice && maxPrice ? `${minPrice} to ${maxPrice} USD` : minPrice ? `${minPrice} USD` : null;
 const spread = renderable ? multiple(cluster!.spread_multiple) : null;
-const lastObserved = renderable ? dateOnly(cluster!.last_updated) : null;
+// The "last observed" column is an observation date or nothing. last_updated
+// is when the row changed, which is recorded rather than observed, and the
+// existing 'not observed' fallback below is the honest cell for a group with
+// no evidence-bearing observation.
+const lastObserved = renderable ? dateOnly(cluster!.observation_window?.to ?? null) : null;
 ---
 
 {renderable && (

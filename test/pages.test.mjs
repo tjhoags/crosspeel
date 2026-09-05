@@ -208,15 +208,30 @@ const PLACEHOLDERS = [
 // itself contain the character a grep over the repository is looking for.
 const EM_DASH = String.fromCharCode(0x2014);
 
-function wordRegex(word) {
+function wordRegex(word, labelAware = false) {
   const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   // \b does not fire next to an apostrophe, so the contraction forms are
   // bounded by hand.
-  return new RegExp(`(^|[^A-Za-z0-9'])${escaped}($|[^A-Za-z0-9'])`);
+  if (!labelAware) return new RegExp(`(^|[^A-Za-z0-9'])${escaped}($|[^A-Za-z0-9'])`);
+  // A hostname label is not a word. The endpoint index carries agentworld.me,
+  // x402.whisperbox.my.id and cpi-report-us.underscoredone.com, and the plain
+  // boundary read "me", "my" and "us" out of them - a top-level domain and two
+  // labels, not first person. A dot or hyphen that joins two alphanumeric runs
+  // is a label separator and is not a boundary; a dot that ends a sentence
+  // still is, so "write to me." is still a hit.
+  //
+  // Only the first-person scan asks for this. The placeholder and banned-word
+  // scans keep the plain boundary on purpose: an unfilled slot reaches a page
+  // joined to its neighbours - "2026-09-undefined", "$undefined.00",
+  // "1.NaN" - and the label-aware boundary would read every one of those as a
+  // hostname and let it through.
+  return new RegExp(
+    `(?<![A-Za-z0-9'])(?<![A-Za-z0-9][.-])${escaped}(?![A-Za-z0-9'])(?![.-][A-Za-z0-9])`,
+  );
 }
 
-function findWord(text, word, caseSensitive) {
-  const re = new RegExp(wordRegex(word).source, caseSensitive ? '' : 'i');
+function findWord(text, word, caseSensitive, labelAware = false) {
+  const re = new RegExp(wordRegex(word, labelAware).source, caseSensitive ? '' : 'i');
   const m = text.match(re);
   if (!m) return null;
   return text.slice(Math.max(0, m.index - 60), m.index + word.length + 60);
@@ -230,8 +245,15 @@ const HOME_ARGUMENT = [
   'This does not observe ownership, contracts, or intent. It observes responses. Where two endpoints respond identically and price differently, that is what gets published, and the operators are invited to dispute it.',
 ];
 
+// Document 03 specifies four figures. A fifth was added at gate G1 on
+// 2026-09-04: document 00 defines observed as "paid for and measured", the
+// corpus carries 122 such endpoints against 1,265 that returned only a payment
+// challenge, and one label cannot honestly carry both. The deviation from
+// document 03 is recorded in crosspeel-engine/DECISIONS.md. The order is still
+// asserted exactly, against the decided set rather than a loosened one.
 const HOME_FIGURE_LABELS = [
   'Endpoints observed',
+  'Endpoints screened',
   'Clusters published',
   'Widest price spread',
   'Last probe run',
@@ -541,7 +563,7 @@ describe('D3 voice - document 07', () => {
       const t = textLoose(html);
       for (const word of FIRST_PERSON) {
         const caseSensitive = word.startsWith('I');
-        const ctx = findWord(t, word, caseSensitive);
+        const ctx = findWord(t, word, caseSensitive, true);
         if (ctx) hits.push(`${f}: "${word}" in ...${ctx}...`);
       }
     }
@@ -577,6 +599,25 @@ describe('D3 voice - document 07', () => {
     expect(hits, `em dash found in: ${hits.join(', ')}`).toEqual([]);
   });
 
+  it('the word boundary still catches a slot joined to its neighbours', () => {
+    // The label-aware boundary exists for hostnames in the first-person scan
+    // and nowhere else. If it ever leaked into the placeholder scan these would
+    // all pass, and a home page reading "Last probe run 2026-09-undefined"
+    // would ship.
+    for (const [text, word] of [
+      ['Last probe run 2026-09-undefined', 'undefined'],
+      ['$undefined.00', 'undefined'],
+      ['a spread of 1.NaN', 'nan'],
+      ['NaN.00x', 'nan'],
+      ['price: $12.34 todo-later', 'todo'],
+    ]) {
+      expect(findWord(text, word, false), `${JSON.stringify(text)} must be caught for ${word}`).not.toBeNull();
+    }
+    // And the first-person scan's boundary does what it is for.
+    expect(findWord('agentworld.me - Crosspeel', 'me', false, true)).toBeNull();
+    expect(findWord('write to me.', 'me', false, true)).not.toBeNull();
+  });
+
   it('no built page carries a placeholder or an unfilled template slot', () => {
     const hits = [];
     for (const f of PRODUCT_PAGES()) {
@@ -600,15 +641,25 @@ describe('D3 home page figures - document 03', () => {
       .map((m) => textTight(m[1]));
   };
 
-  it('there are four figure rows, one per document 03 label', () => {
+  it('there is one figure row per label, in order', () => {
     expect(figureValues()).toHaveLength(HOME_FIGURE_LABELS.length);
   });
 
-  it('the three count figures render as numbers and match the corpus', () => {
-    const [endpoints, clusters, spread] = figureValues();
+  it('the four count figures render as numbers and match the corpus', () => {
+    const [endpoints, screened, clusters, spread] = figureValues();
 
     expect(endpoints, 'endpoints observed is not a bare number').toMatch(/^\d+$/);
     expect(Number(endpoints)).toBe(corpus.stats.endpoints_observed);
+
+    // Observed is the paid subset of screened. A build where the two are equal
+    // is only honest if every screened endpoint was in fact paid, so the
+    // relationship is asserted rather than the two figures read independently.
+    expect(screened, 'endpoints screened is not a bare number').toMatch(/^\d+$/);
+    expect(Number(screened)).toBe(corpus.stats.endpoints_screened);
+    expect(
+      Number(endpoints) <= Number(screened),
+      'endpoints observed exceeds endpoints screened, which cannot happen: observed is a subset',
+    ).toBe(true);
 
     expect(clusters, 'clusters published is not a bare number').toMatch(/^\d+$/);
     expect(Number(clusters)).toBe(corpus.stats.clusters_published);
@@ -625,8 +676,9 @@ describe('D3 home page figures - document 03', () => {
     // ever ship." This test is meaningful only against the committed empty
     // state and is skipped once the corpus carries rows.
     if (corpus.stats.endpoints_observed !== 0) return;
-    const [endpoints, clusters, spread] = figureValues();
+    const [endpoints, screened, clusters, spread] = figureValues();
     expect(endpoints).toBe('0');
+    expect(screened).toBe('0');
     expect(clusters).toBe('0');
     expect(spread).toBe('0.00x');
   });
@@ -635,7 +687,7 @@ describe('D3 home page figures - document 03', () => {
     // Document 03 renders this row as {date}, not as a count. With
     // stats.last_probe_run null there is no date to render, and document 00
     // forbids inventing one.
-    const value = figureValues()[3];
+    const value = figureValues()[HOME_FIGURE_LABELS.indexOf('Last probe run')];
     const isDate = /^\d{4}-\d{2}-\d{2}/.test(value);
     const isHonestAbsence = /not yet run|no probe run/i.test(value);
     expect(
@@ -661,12 +713,50 @@ describe('D3 home page figures - document 03', () => {
     // content derives from observations." A meta observed date on an empty
     // corpus would be a recorded claim presented as an observed one, which
     // document 00 forbids at the level above every surface.
+    // Every observation date the corpus carries: each stored observation, each
+    // published group's window, and the corpus-wide newest. A page may claim
+    // any one of these and nothing else.
+    const carried = new Set([corpus.observed_through]);
+    for (const e of corpus.endpoints || []) for (const o of e.observations || []) carried.add(o.observed_at);
+    for (const c of corpus.clusters || []) {
+      if (c.observation_window?.to) carried.add(c.observation_window.to);
+      if (c.observation_window?.from) carried.add(c.observation_window.from);
+    }
+
+    // Lexicographic comparison below is sound only for one fixed shape. The
+    // data contract (src/data/README.md) says ISO 8601 UTC; this pins the
+    // exact shape every carried value and every emitted value must have.
+    const ISO_Z = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+    for (const v of carried) expect(v, `corpus carries a date outside the contract: ${v}`).toMatch(ISO_Z);
+
     for (const f of PRODUCT_PAGES()) {
       const m = raw.get(f).match(/<meta\s+name="observed"\s+content="([^"]*)"/);
+      // An endpoint page whose observations are listed derives its content from
+      // them and must say so; a cluster page likewise. Absence is only honest
+      // when there is nothing observed to name.
+      if (/^endpoints\/.+\/index\.html$/.test(f)) {
+        const slug = f.replace(/^endpoints\//, '').replace(/\/index\.html$/, '');
+        const ep = (corpus.endpoints || []).find((e) => e.slug === slug);
+        if (ep && (ep.observations || []).length > 0) {
+          expect(m, `${f} lists observations but carries no observed meta`).not.toBeNull();
+          expect(m && m[1]).toBe(ep.observations[ep.observations.length - 1].observed_at);
+        }
+      }
       if (corpus.observed_through === null) {
         expect(m, `${f} emits an observed date but the corpus has observed nothing`).toBeNull();
       } else if (m) {
-        expect(m[1]).toBe(corpus.observed_through);
+        expect(m[1], `${f} emits an observed date outside the contract`).toMatch(ISO_Z);
+        // Document 02: the meta carries "the newest observation date this page
+        // rests on". For an endpoint or cluster page that is that page's own
+        // newest observation, which is earlier than the corpus-wide newest.
+        // Requiring equality with the corpus-wide figure failed every honest
+        // per-page date. What is forbidden is a date the corpus does not carry
+        // at all, or one later than anything observed; both are asserted.
+        expect(
+          m[1] <= corpus.observed_through,
+          `${f} claims ${m[1]}, later than the corpus's newest observation ${corpus.observed_through}`,
+        ).toBe(true);
+        expect(carried.has(m[1]), `${f} claims an observation date the corpus does not carry: ${m[1]}`).toBe(true);
       }
     }
   });

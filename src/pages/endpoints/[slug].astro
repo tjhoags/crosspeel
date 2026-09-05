@@ -23,6 +23,10 @@ const { endpoint } = Astro.props;
 const cluster = endpoint.cluster_slug ? corpus.clusters.find((c) => c.slug === endpoint.cluster_slug) : null;
 const observedPrices = endpoint.price_history.filter((p) => p.provenance === 'observed').length;
 const recordedPrices = endpoint.price_history.length - observedPrices;
+// The date the <meta name="observed"> carries. last_seen is not a fallback for
+// it: that is the date a directory listed the url, which is recorded, and a
+// recorded date under the observed label is the one substitution document 00
+// forbids. An endpoint with no observation carries no observed meta.
 const newest = endpoint.observations.length ? endpoint.observations[endpoint.observations.length - 1].observed_at : null;
 const totalCost = endpoint.observations.reduce((n, o) => n + (typeof o.cost_usd === 'number' ? o.cost_usd : 0), 0);
 
@@ -30,7 +34,7 @@ const title = endpoint.hostname;
 const description = `What Crosspeel observed at ${endpoint.hostname}: ${endpoint.observation_count} observations, price history, and every stored response.`;
 ---
 
-<Layout title={title} description={description} observed={newest || endpoint.last_seen}>
+<Layout title={title} description={description} observed={newest}>
   <h1 class="cp-display cp-mono-display" data-captured="hostname">{endpoint.hostname}</h1>
 
   <p class="cp-lede">
@@ -155,8 +159,14 @@ const description = `What Crosspeel observed at ${endpoint.hostname}: ${endpoint
                 <td class="cp-mono">{usd(o.cost_usd) ?? '-'}</td>
                 <td class="cp-micro cp-break">{o.body_sha256}</td>
                 <td class="cp-micro">
-                  <a href={o.permalink}>response</a>
-                  {o.headers_permalink && <> - <a href={o.headers_permalink}>headers</a></>}
+                  {o.permalink ? (
+                    <>
+                      <a href={o.permalink}>response</a>
+                      {o.headers_permalink && <> - <a href={o.headers_permalink}>headers</a></>}
+                    </>
+                  ) : (
+                    <span>not yet stored</span>
+                  )}
                 </td>
               </tr>
             ))}
