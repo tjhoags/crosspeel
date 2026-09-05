@@ -58,4 +58,8 @@ bakeoff                 price variants and probe depth, from document 04
   label is wrong even though both numbers are real. Settled at gate G1, 2026-09-04.
 - Every number rendered carries the date it was observed and links to its evidence.
 - `permalink` on an evidence row must resolve. A cluster page whose evidence link
-  404s is worse than no cluster page.
+  404s is worse than no cluster page. Permalinks are `https://crosspeel.com/evidence/`
+  followed by the R2 key, and `src/worker/index.js` serves that path from the
+  `crosspeel-artifacts` bucket - read-only, immutable, never rendered as a page.
+  The key must be in the bucket: the Worker cannot invent an artifact, and
+  `crosspeel-engine/scripts/flush-artifacts.mjs` is what puts one there.

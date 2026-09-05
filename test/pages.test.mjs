@@ -212,7 +212,18 @@ function wordRegex(word) {
   const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   // \b does not fire next to an apostrophe, so the contraction forms are
   // bounded by hand.
-  return new RegExp(`(^|[^A-Za-z0-9'])${escaped}($|[^A-Za-z0-9'])`);
+  //
+  // A hostname label is not a word. The endpoint index carries agentworld.me,
+  // x402.whisperbox.my.id and cpi-report-us.underscoredone.com, and the
+  // previous boundary read "me", "my" and "us" out of them - a top-level
+  // domain and two labels, not first person. A dot or hyphen that joins two
+  // alphanumeric runs is a label separator and is not a boundary; a dot that
+  // ends a sentence still is, so "write to me." is still a hit. The cost is a
+  // hyphen-joined compound like "tell-us-more", which no product surface
+  // writes.
+  return new RegExp(
+    `(?<![A-Za-z0-9'])(?<![A-Za-z0-9][.-])${escaped}(?![A-Za-z0-9'])(?![.-][A-Za-z0-9])`,
+  );
 }
 
 function findWord(text, word, caseSensitive) {
@@ -679,12 +690,32 @@ describe('D3 home page figures - document 03', () => {
     // content derives from observations." A meta observed date on an empty
     // corpus would be a recorded claim presented as an observed one, which
     // document 00 forbids at the level above every surface.
+    // Every observation date the corpus carries: each stored observation, each
+    // published group's window, and the corpus-wide newest. A page may claim
+    // any one of these and nothing else.
+    const carried = new Set([corpus.observed_through]);
+    for (const e of corpus.endpoints || []) for (const o of e.observations || []) carried.add(o.observed_at);
+    for (const c of corpus.clusters || []) {
+      if (c.observation_window?.to) carried.add(c.observation_window.to);
+      if (c.observation_window?.from) carried.add(c.observation_window.from);
+    }
+
     for (const f of PRODUCT_PAGES()) {
       const m = raw.get(f).match(/<meta\s+name="observed"\s+content="([^"]*)"/);
       if (corpus.observed_through === null) {
         expect(m, `${f} emits an observed date but the corpus has observed nothing`).toBeNull();
       } else if (m) {
-        expect(m[1]).toBe(corpus.observed_through);
+        // Document 02: the meta carries "the newest observation date this page
+        // rests on". For an endpoint or cluster page that is that page's own
+        // newest observation, which is earlier than the corpus-wide newest.
+        // Requiring equality with the corpus-wide figure failed every honest
+        // per-page date. What is forbidden is a date the corpus does not carry
+        // at all, or one later than anything observed; both are asserted.
+        expect(
+          m[1] <= corpus.observed_through,
+          `${f} claims ${m[1]}, later than the corpus's newest observation ${corpus.observed_through}`,
+        ).toBe(true);
+        expect(carried.has(m[1]), `${f} claims an observation date the corpus does not carry: ${m[1]}`).toBe(true);
       }
     }
   });
