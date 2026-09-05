@@ -159,8 +159,14 @@ const description = `What Crosspeel observed at ${endpoint.hostname}: ${endpoint
                 <td class="cp-mono">{usd(o.cost_usd) ?? '-'}</td>
                 <td class="cp-micro cp-break">{o.body_sha256}</td>
                 <td class="cp-micro">
-                  <a href={o.permalink}>response</a>
-                  {o.headers_permalink && <> - <a href={o.headers_permalink}>headers</a></>}
+                  {o.permalink ? (
+                    <>
+                      <a href={o.permalink}>response</a>
+                      {o.headers_permalink && <> - <a href={o.headers_permalink}>headers</a></>}
+                    </>
+                  ) : (
+                    <span>not yet stored</span>
+                  )}
                 </td>
               </tr>
             ))}
