@@ -95,11 +95,14 @@ pays per call at the transport layer.
 {
   "mcpServers": {
     "crosspeel": {
-      "url": "https://crosspeel.com/mcp"
+      "url": "https://crosspeel.com/api/mcp"
     }
   }
 }
 ```
+
+`/mcp` is the page you are reading the instructions on. `/api/mcp` is the endpoint
+an agent posts to.
 
 <details>
 <summary><b>The three tools, and what they answer</b></summary>
@@ -126,8 +129,10 @@ returned as a match.** It comes back unmatched, with the reason.
 </details>
 
 > [!NOTE]
-> The MCP endpoint is not serving yet. The server is built and tested; the Worker
-> that fronts it has not been deployed. Current state is always on
+> **The endpoint is not answering yet.** The server is built, tested and builds
+> clean at 87 KiB with all three bindings resolved; the Worker that fronts it has
+> not been deployed. Pasting the config above today gets a connection failure,
+> not a wrong answer. Current state is always on
 > [crosspeel.com](https://crosspeel.com).
 
 ## What this cannot see
