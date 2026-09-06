@@ -38,7 +38,7 @@ const discriminatingFields = [
 
 // The four limits from document 02, "What the method cannot see". Verbatim.
 const limits = [
-  'Two operators independently using the same upstream vendor will cluster. That is a shared dependency, and nothing in the method distinguishes it from any other reason two responses agree.',
+  'Two operators independently using the same upstream vendor will cluster. That is a shared dependency, and Crosspeel cannot distinguish it from any other reason two responses agree.',
   'Two operators running the same open-source template will cluster.',
   'An operator who deliberately randomises key order and error wording will not cluster, and Crosspeel will not detect that they are avoiding detection.',
   'Nothing here observes ownership, contracts, or intent. The findings are about responses, not companies.',

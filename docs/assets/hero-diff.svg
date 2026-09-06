@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="508" viewBox="0 0 1200 508" font-family="'IBM Plex Sans',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" role="img" aria-label="Two independently branded endpoints, 245 of 245 captured fields identical">
+<rect width="1200" height="508" fill="#FAFBF9"/>
+<text x="30" y="46" font-size="13" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">crypto-market-analysis-01</text>
+<text x="30" y="82" font-size="27" font-weight="600" fill="#14201B">Two vendors. 245 of 245 captured fields identical.</text>
+<text x="30" y="110" font-size="15" fill="#55635C">Observed 2026-09-04 across 30 paired probe inputs, with 4 verbatim error-string matches.</text>
+<line x1="30" y1="130" x2="1170" y2="130" stroke="#CFD6D0" stroke-width="1"/>
+<text x="300" y="154" font-size="13" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">agentdata-api.degrees2.workers.dev</text>
+<text x="762" y="154" font-size="13" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">agentdatapro.com</text>
+<rect x="290" y="153" width="408" height="26" fill="#EFF2EE"/>
+<rect x="752" y="153" width="408" height="26" fill="#EFF2EE"/>
+<text x="30" y="172" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">tls_issuer</text>
+<text x="300" y="172" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">CN=WE1, O=Google Trust Services</text>
+<text x="762" y="172" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">CN=WE1, O=Google Trust Services</text>
+<rect x="290" y="183" width="408" height="26" fill="#EFF2EE"/>
+<rect x="752" y="183" width="408" height="26" fill="#EFF2EE"/>
+<text x="30" y="202" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">server_header</text>
+<text x="300" y="202" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">cloudflare</text>
+<text x="762" y="202" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">cloudflare</text>
+<rect x="290" y="213" width="408" height="26" fill="#EFF2EE"/>
+<rect x="752" y="213" width="408" height="26" fill="#EFF2EE"/>
+<text x="30" y="232" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">header_order</text>
+<text x="300" y="232" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">["Date","Content-Type","Transfer…</text>
+<text x="762" y="232" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">["Date","Content-Type","Transfer…</text>
+<rect x="290" y="243" width="408" height="26" fill="#EFF2EE"/>
+<rect x="752" y="243" width="408" height="26" fill="#EFF2EE"/>
+<text x="30" y="262" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">key_order_hash</text>
+<text x="300" y="262" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">179c4b852508d755…</text>
+<text x="762" y="262" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">179c4b852508d755…</text>
+<rect x="290" y="273" width="408" height="26" fill="#EFF2EE"/>
+<rect x="752" y="273" width="408" height="26" fill="#EFF2EE"/>
+<text x="30" y="292" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">field_paths_hash</text>
+<text x="300" y="292" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">6b3f1d57c1b9ef9c…</text>
+<text x="762" y="292" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">6b3f1d57c1b9ef9c…</text>
+<rect x="290" y="303" width="408" height="26" fill="#EFF2EE"/>
+<rect x="752" y="303" width="408" height="26" fill="#EFF2EE"/>
+<text x="30" y="322" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">float_precision_max</text>
+<text x="300" y="322" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">0</text>
+<text x="762" y="322" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">0</text>
+<rect x="290" y="333" width="408" height="26" fill="#EFF2EE"/>
+<rect x="752" y="333" width="408" height="26" fill="#EFF2EE"/>
+<text x="30" y="352" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">null_vs_omitted</text>
+<text x="300" y="352" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">[]</text>
+<text x="762" y="352" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">[]</text>
+<rect x="290" y="363" width="408" height="26" fill="#EFF2EE"/>
+<rect x="752" y="363" width="408" height="26" fill="#EFF2EE"/>
+<text x="30" y="382" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">tls_profile</text>
+<text x="300" y="382" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">TLSv1.3|h2|AES_256_GCM</text>
+<text x="762" y="382" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">TLSv1.3|h2|AES_256_GCM</text>
+<rect x="290" y="393" width="408" height="26" fill="#EFF2EE"/>
+<rect x="752" y="393" width="408" height="26" fill="#EFF2EE"/>
+<text x="30" y="412" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">price per call</text>
+<text x="300" y="412" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">0.01 USD</text>
+<text x="762" y="412" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">0.01 USD</text>
+<line x1="30" y1="432" x2="1170" y2="432" stroke="#CFD6D0" stroke-width="1"/>
+<text x="30" y="460" font-size="13.5" fill="#55635C">No colour appears above because nothing diverged. Colour marks divergence and nothing else - here the prices agree too,</text>
+<text x="30" y="480" font-size="13.5" fill="#55635C">so this is one operator behind two names rather than a price gap. That distinction is the finding.</text>
+</svg>

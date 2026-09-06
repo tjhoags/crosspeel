@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="516" viewBox="0 0 1200 516" font-family="'IBM Plex Sans',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" role="img" aria-label="How a paid call becomes a published finding, and what stops one at each step">
+<rect width="1200" height="516" fill="#FAFBF9"/>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#55635C"/></marker></defs>
+<text x="30" y="46" font-size="27" font-weight="600" fill="#14201B">From one paid call to a published finding</text>
+<text x="30" y="76" font-size="15" fill="#55635C">Five steps. Each one can stop a claim, and the row beneath says what stops it there.</text>
+<line x1="30" y1="98" x2="1170" y2="98" stroke="#CFD6D0"/>
+<rect x="30" y="130" width="196" height="150" fill="#EFF2EE" stroke="#CFD6D0"/>
+<text x="46" y="158" font-size="12" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">1</text>
+<text x="46" y="184" font-size="18" font-weight="600" fill="#14201B">Pay</text>
+<text x="46" y="210" font-size="12.5" fill="#55635C">USDC on Base, signed</text>
+<text x="46" y="227" font-size="12.5" fill="#55635C">per call. The true cost</text>
+<text x="46" y="244" font-size="12.5" fill="#55635C">is recorded, never</text>
+<text x="46" y="261" font-size="12.5" fill="#55635C">the quoted one.</text>
+<line x1="230" y1="205.0" x2="254" y2="205.0" stroke="#55635C" marker-end="url(#a)"/>
+<line x1="128.0" y1="280" x2="128.0" y2="292" stroke="#2B3A8F" stroke-dasharray="3 3"/>
+<rect x="30" y="296" width="196" height="76" fill="#E8EAF5" stroke="#2B3A8F"/>
+<text x="44" y="314" font-size="11" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#2B3A8F">what stops it</text>
+<text x="44" y="334" font-size="12" fill="#14201B">An offer above the cap is</text>
+<text x="44" y="350" font-size="12" fill="#14201B">refused, not paid.</text>
+<rect x="260" y="130" width="196" height="150" fill="#EFF2EE" stroke="#CFD6D0"/>
+<text x="276" y="158" font-size="12" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">2</text>
+<text x="276" y="184" font-size="18" font-weight="600" fill="#14201B">Capture</text>
+<text x="276" y="210" font-size="12.5" fill="#55635C">Certificate, verbatim</text>
+<text x="276" y="227" font-size="12.5" fill="#55635C">header order, key order,</text>
+<text x="276" y="244" font-size="12.5" fill="#55635C">error string, timing.</text>
+<text x="276" y="261" font-size="12.5" fill="#55635C">Raw bytes hashed.</text>
+<line x1="460" y1="205.0" x2="484" y2="205.0" stroke="#55635C" marker-end="url(#a)"/>
+<line x1="358.0" y1="280" x2="358.0" y2="292" stroke="#2B3A8F" stroke-dasharray="3 3"/>
+<rect x="260" y="296" width="196" height="76" fill="#E8EAF5" stroke="#2B3A8F"/>
+<text x="274" y="314" font-size="11" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#2B3A8F">what stops it</text>
+<text x="274" y="334" font-size="12" fill="#14201B">A missing artifact means</text>
+<text x="274" y="350" font-size="12" fill="#14201B">the observation is dropped.</text>
+<rect x="490" y="130" width="196" height="150" fill="#EFF2EE" stroke="#CFD6D0"/>
+<text x="506" y="158" font-size="12" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">3</text>
+<text x="506" y="184" font-size="18" font-weight="600" fill="#14201B">Compare</text>
+<text x="506" y="210" font-size="12.5" fill="#55635C">Only within one</text>
+<text x="506" y="227" font-size="12.5" fill="#55635C">capability, only across</text>
+<text x="506" y="244" font-size="12.5" fill="#55635C">different registrable</text>
+<text x="506" y="261" font-size="12.5" fill="#55635C">domains.</text>
+<line x1="690" y1="205.0" x2="714" y2="205.0" stroke="#55635C" marker-end="url(#a)"/>
+<line x1="588.0" y1="280" x2="588.0" y2="292" stroke="#2B3A8F" stroke-dasharray="3 3"/>
+<rect x="490" y="296" width="196" height="76" fill="#E8EAF5" stroke="#2B3A8F"/>
+<text x="504" y="314" font-size="11" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#2B3A8F">what stops it</text>
+<text x="504" y="334" font-size="12" fill="#14201B">Two names on one domain are</text>
+<text x="504" y="350" font-size="12" fill="#14201B">excluded before scoring.</text>
+<rect x="720" y="130" width="196" height="150" fill="#EFF2EE" stroke="#CFD6D0"/>
+<text x="736" y="158" font-size="12" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">4</text>
+<text x="736" y="184" font-size="18" font-weight="600" fill="#14201B">Confirm</text>
+<text x="736" y="210" font-size="12.5" fill="#55635C">Error strings must</text>
+<text x="736" y="227" font-size="12.5" fill="#55635C">match verbatim on three</text>
+<text x="736" y="244" font-size="12.5" fill="#55635C">distinct error inputs,</text>
+<text x="736" y="261" font-size="12.5" fill="#55635C">or no promotion.</text>
+<line x1="920" y1="205.0" x2="944" y2="205.0" stroke="#55635C" marker-end="url(#a)"/>
+<line x1="818.0" y1="280" x2="818.0" y2="292" stroke="#2B3A8F" stroke-dasharray="3 3"/>
+<rect x="720" y="296" width="196" height="76" fill="#E8EAF5" stroke="#2B3A8F"/>
+<text x="734" y="314" font-size="11" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#2B3A8F">what stops it</text>
+<text x="734" y="334" font-size="12" fill="#14201B">Low confidence is stored</text>
+<text x="734" y="350" font-size="12" fill="#14201B">and never published.</text>
+<rect x="950" y="130" width="196" height="150" fill="#EFF2EE" stroke="#CFD6D0"/>
+<text x="966" y="158" font-size="12" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">5</text>
+<text x="966" y="184" font-size="18" font-weight="600" fill="#14201B">Publish</text>
+<text x="966" y="210" font-size="12.5" fill="#55635C">A human reads one</text>
+<text x="966" y="227" font-size="12.5" fill="#55635C">page and answers three</text>
+<text x="966" y="244" font-size="12.5" fill="#55635C">questions. A no on the</text>
+<text x="966" y="261" font-size="12.5" fill="#55635C">third stops all of them.</text>
+<line x1="1048.0" y1="280" x2="1048.0" y2="292" stroke="#2B3A8F" stroke-dasharray="3 3"/>
+<rect x="950" y="296" width="196" height="76" fill="#E8EAF5" stroke="#2B3A8F"/>
+<text x="964" y="314" font-size="11" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#2B3A8F">what stops it</text>
+<text x="964" y="334" font-size="12" fill="#14201B">Evidence not in the serving</text>
+<text x="964" y="350" font-size="12" fill="#14201B">store means the cluster is</text>
+<text x="964" y="366" font-size="12" fill="#14201B">withheld.</text>
+<line x1="30" y1="500" x2="1170" y2="500" stroke="#CFD6D0"/>
+<text x="30" y="524" font-size="13.5" fill="#55635C">On the first run this produced one high-confidence cluster out of 180 endpoints taken to full depth. Seven more were held at low confidence and never published.</text>
+</svg>

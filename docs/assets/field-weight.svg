@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="694" viewBox="0 0 1200 694" font-family="'IBM Plex Sans',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" role="img" aria-label="How often two unrelated endpoints agree on each captured field, measured over 426,352 comparisons">
+<rect width="1200" height="694" fill="#FAFBF9"/>
+<text x="30" y="46" font-size="13" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">measured 2026-09-04</text>
+<text x="30" y="82" font-size="27" font-weight="600" fill="#14201B">Not every match is worth the same.</text>
+<text x="30" y="112" font-size="15" fill="#55635C">How often two UNRELATED endpoints - different registrable domains - already agree on a field by coincidence.</text>
+<text x="30" y="134" font-size="15" fill="#55635C">426,352 field comparisons across 14,279 pairs. A shorter bar means agreement there is rarer, so it proves more.</text>
+<line x1="30" y1="158" x2="1170" y2="158" stroke="#CFD6D0"/>
+<text x="30" y="180" font-size="12" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">field</text>
+<text x="300" y="180" font-size="12" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">coincidental agreement between unrelated endpoints</text>
+<text x="916" y="180" font-size="12" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">evidence</text>
+<line x1="300.0" y1="180" x2="300.0" y2="562" stroke="#CFD6D0" stroke-dasharray="2 4"/>
+<text x="300.0" y="582" font-size="11" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C" text-anchor="middle">0%</text>
+<line x1="440.0" y1="180" x2="440.0" y2="562" stroke="#CFD6D0" stroke-dasharray="2 4"/>
+<text x="440.0" y="582" font-size="11" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C" text-anchor="middle">25%</text>
+<line x1="580.0" y1="180" x2="580.0" y2="562" stroke="#CFD6D0" stroke-dasharray="2 4"/>
+<text x="580.0" y="582" font-size="11" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C" text-anchor="middle">50%</text>
+<line x1="720.0" y1="180" x2="720.0" y2="562" stroke="#CFD6D0" stroke-dasharray="2 4"/>
+<text x="720.0" y="582" font-size="11" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C" text-anchor="middle">75%</text>
+<line x1="860.0" y1="180" x2="860.0" y2="562" stroke="#CFD6D0" stroke-dasharray="2 4"/>
+<text x="860.0" y="582" font-size="11" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C" text-anchor="middle">100%</text>
+<text x="30" y="200" font-size="13" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">header_order</text>
+<rect x="300" y="185" width="560" height="19" fill="#EFF2EE"/>
+<rect x="300" y="185" width="24.2" height="19" fill="#2B3A8F"/>
+<text x="334.2" y="200" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">4.33%</text>
+<text x="916" y="200" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#2B3A8F">4.53 bits</text>
+<text x="30" y="238" font-size="13" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">error_string</text>
+<rect x="300" y="223" width="560" height="19" fill="#EFF2EE"/>
+<rect x="300" y="223" width="40.9" height="19" fill="#2B3A8F"/>
+<text x="350.9" y="238" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">7.30%</text>
+<text x="916" y="238" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#2B3A8F">3.78 bits</text>
+<text x="30" y="276" font-size="13" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">key_order_hash</text>
+<rect x="300" y="261" width="560" height="19" fill="#EFF2EE"/>
+<rect x="300" y="261" width="61.7" height="19" fill="#2B3A8F"/>
+<text x="371.7" y="276" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">11.01%</text>
+<text x="916" y="276" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#2B3A8F">3.18 bits</text>
+<text x="30" y="314" font-size="13" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">field_paths_hash</text>
+<rect x="300" y="299" width="560" height="19" fill="#EFF2EE"/>
+<rect x="300" y="299" width="61.7" height="19" fill="#2B3A8F"/>
+<text x="371.7" y="314" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">11.01%</text>
+<text x="916" y="314" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#2B3A8F">3.18 bits</text>
+<text x="30" y="352" font-size="13" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">timestamp_format</text>
+<rect x="300" y="337" width="560" height="19" fill="#EFF2EE"/>
+<rect x="300" y="337" width="227.8" height="19" fill="#CFD6D0"/>
+<text x="537.8" y="352" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">40.67%</text>
+<text x="916" y="352" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">1.30 bits</text>
+<text x="30" y="390" font-size="13" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">tls_issuer</text>
+<rect x="300" y="375" width="560" height="19" fill="#EFF2EE"/>
+<rect x="300" y="375" width="365.5" height="19" fill="#CFD6D0"/>
+<text x="675.5" y="390" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">65.26%</text>
+<text x="916" y="390" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">0.62 bits</text>
+<text x="30" y="428" font-size="13" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">float_precision_max</text>
+<rect x="300" y="413" width="560" height="19" fill="#EFF2EE"/>
+<rect x="300" y="413" width="403.1" height="19" fill="#CFD6D0"/>
+<text x="713.1" y="428" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">71.99%</text>
+<text x="916" y="428" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">0.47 bits</text>
+<text x="30" y="466" font-size="13" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">server_header</text>
+<rect x="300" y="451" width="560" height="19" fill="#EFF2EE"/>
+<rect x="300" y="451" width="419.0" height="19" fill="#CFD6D0"/>
+<text x="729.0" y="466" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">74.83%</text>
+<text x="916" y="466" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">0.42 bits</text>
+<text x="30" y="504" font-size="13" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">null_vs_omitted</text>
+<rect x="300" y="489" width="560" height="19" fill="#EFF2EE"/>
+<rect x="300" y="489" width="419.2" height="19" fill="#CFD6D0"/>
+<text x="729.2" y="504" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">74.85%</text>
+<text x="916" y="504" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">0.42 bits</text>
+<text x="30" y="542" font-size="13" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">tls_profile</text>
+<rect x="300" y="527" width="560" height="19" fill="#EFF2EE"/>
+<rect x="300" y="527" width="444.4" height="19" fill="#CFD6D0"/>
+<text x="754.4" y="542" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">79.35%</text>
+<text x="916" y="542" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#55635C">0.33 bits</text>
+<line x1="30" y1="584" x2="1170" y2="584" stroke="#CFD6D0"/>
+<text x="30" y="606" font-size="13.5" fill="#55635C">Two unrelated endpoints agree on <tspan font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">tls_profile</tspan> four times in five. Agreeing there is nearly free.</text>
+<text x="30" y="628" font-size="13.5" fill="#55635C">They agree on <tspan font-family="'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#14201B">header_order</tspan> once in twenty-three, so that match is worth fourteen times as much - and method version 1 counts them the same.</text>
+</svg>

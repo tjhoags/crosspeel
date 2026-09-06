@@ -280,11 +280,12 @@ const DISPUTE_INVITATION_ADDRESS = 'disputes@crosspeel.com';
 // lists above - as document 02 writes it, that sentence contains a word
 // document 07 bans on every product surface, and this repository is public.
 const METHOD_LIMITS = [
-  j(
-    'Two operators independently using the same upstream vendor will cluster. ',
-    'That is a shared dependency, not a ', 're', 'sell', 'er',
-    ' relationship, and Crosspeel cannot distinguish them from the outside.',
-  ),
+  // Document 02's first limit was amended on 2026-09-06. Its previous wording
+  // carried a word document 07 bans on every product surface, so this test and
+  // the banned-word scan could not both pass. Document 00 settles it: the legal
+  // posture is what the ban serves, and where documents conflict 00 wins. The
+  // replacement makes no claim about a relationship at all, which is stronger.
+  'Two operators independently using the same upstream vendor will cluster. That is a shared dependency, and Crosspeel cannot distinguish it from any other reason two responses agree.',
   'Two operators running the same open-source template will cluster.',
   'An operator who deliberately randomises key order and error wording will not cluster, and Crosspeel will not detect that they are avoiding detection.',
   'Nothing here observes ownership, contracts, or intent. The findings are about responses, not companies.',
