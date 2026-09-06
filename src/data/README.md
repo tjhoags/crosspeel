@@ -15,6 +15,14 @@ zero rather than a placeholder.
 ```
 generated_at            ISO 8601 UTC string, or null when never exported
 observed_through        ISO 8601 UTC of the newest observation, or null
+evidence_dropped        integer, observations left out because their artifact was
+                        not in the store; the count travels, the detail stays in
+                        the private run report
+evidence_verified       bool, true only when the exporter checked every permalink
+                        against the store the evidence route serves
+evidence_store          "r2", "manifest", "staging", or null when no store was
+                        consulted; only "r2" and "manifest" certify a permalink
+next_probe_run          ISO 8601 UTC, or null - nothing in D1 records a future run
 stats.endpoints_observed        integer, endpoints paid for and measured
 stats.endpoints_screened        integer, endpoints called at least once, paid or not
 stats.clusters_published        integer
@@ -39,9 +47,12 @@ endpoints[]
   id, slug, url, hostname, operator_name, capability, tag,
   source_directory, first_seen, last_seen, status,
   cluster_slug | null,
+  latest_observed_price { observed_at, amount_usd, asset, raw_amount, provenance } | null
+  observation_count     integer
   price_history[]       { observed_at, amount_usd, asset, raw_amount, provenance }
   observations[]        { observation_id, observed_at, status_code, ttfb_ms,
-                          total_ms, cost_usd, body_sha256, permalink }
+                          total_ms, cost_usd, body_sha256, permalink,
+                          headers_permalink }
 
 disputes[]              every dispute, including ones Crosspeel lost
 featured_diff           the home page pane, or null when nothing is published
@@ -63,3 +74,31 @@ bakeoff                 price variants and probe depth, from document 04
   `crosspeel-artifacts` bucket - read-only, immutable, never rendered as a page.
   The key must be in the bucket: the Worker cannot invent an artifact, and
   `crosspeel-engine/scripts/flush-artifacts.mjs` is what puts one there.
+- A permalink is written only when the exporter certified it against the store
+  the route serves: a direct look at the `crosspeel-artifacts` bucket
+  (`evidence_store: "r2"`) or a flush manifest for that bucket
+  (`evidence_store: "manifest"`). An export that only saw the staging tree
+  withholds every permalink as `null` and sets `evidence_verified: false`; the
+  endpoint page then renders "not yet stored" where the links would be, and no
+  cluster with evidence is published. Settled at gate G2, 2026-09-05.
+- The file committed on 2026-09-05 is that withheld state: 122 endpoints
+  observed, 1,265 screened, 6,667 observations, every `permalink` and
+  `headers_permalink` null, zero clusters. The bucket was verified empty on
+  2026-09-05. The one cluster that cleared G1 (`crypto-market-analysis-01`, in
+  D1 with `published = 1`) enters this file when its evidence has been
+  re-probed, flushed, and exported with `--flush-manifest`.
+
+## How the site reaches crosspeel.com
+
+The site is a Cloudflare Worker with static assets (`wrangler.json`): `astro
+build` writes `dist/`, `src/worker/index.js` answers `/evidence/*` from the
+`crosspeel-artifacts` bucket and hands every other path to the assets. It serves
+at `https://crosspeel.com` (custom domain) and `https://crosspeel.hoags.workers.dev`
+since 2026-09-05, Version `794b1047-2e2e-48f2-9b57-ba86e6f977e3`.
+
+Deploys are by hand. There is no Workers Builds connection on the Worker and no
+CI in this repository, so a merge to `main` changes nothing on the live site.
+After `npm run build`, `npx wrangler deploy` with an account API token that can
+edit Workers and read R2 publishes what `dist/` holds. The evidence route and the
+corpus travel together: a corpus with certified permalinks must not be deployed
+before the flush that certified it has run.
