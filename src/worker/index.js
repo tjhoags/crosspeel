@@ -34,6 +34,7 @@
 //   groups - and the exporter exists to make sure those never reach a reader.
 
 const EVIDENCE_PREFIX = '/evidence/';
+const BAKEOFF_PATH = '/api/bakeoff';
 const IMMUTABLE = 'public, max-age=31536000, immutable';
 const NO_STORE = 'no-store';
 
@@ -227,6 +228,73 @@ export async function handleEvidence(request, env) {
   return new Response(object.body, { status: 200, headers });
 }
 
+// The Bakeoff intake, answered honestly until the engine Worker exists.
+//
+// /bakeoff carries a plain HTML form - method post, action /api/bakeoff, no
+// JavaScript - and the router that answers it lives in crosspeel-engine, which
+// has no entrypoint and has never deployed. Until 2026-09-06 that POST landed on
+// the static asset handler and came back 405 with an empty body: a buyer filled
+// in the form, submitted, and arrived at a blank page with nothing said.
+//
+// Document 04 calls a paid report that silently fails to arrive the worst outcome
+// in the flow, "worse than a refund, because the buyer does not know to ask". A
+// submission that vanishes before payment is the same failure one step earlier.
+// Document 07 rule 7: errors give direction - state what happened and the next
+// action, no apology, no vagueness.
+//
+// This is a placeholder with a known end. crosspeel-engine/wrangler.toml declares
+// a zone route on this path, and a zone route runs ahead of a custom-domain
+// Worker, so the day that Worker has an entrypoint and deploys it takes this path
+// and this handler stops being reached.
+const BAKEOFF_MESSAGE =
+  'The Bakeoff is not open yet. The engine that runs a report is built and tested but is not deployed, ' +
+  'so nothing was submitted and nothing was charged. ' +
+  'The method is published at https://crosspeel.com/method and the observations behind it are at https://crosspeel.com/endpoints. ' +
+  'To be told when it opens, write to tom@crosspeel.com.';
+
+function handleBakeoff(request) {
+  const headers = {
+    'cache-control': NO_STORE,
+    'x-content-type-options': 'nosniff',
+    'content-security-policy': "default-src 'none'; sandbox",
+    'referrer-policy': 'no-referrer',
+  };
+
+  // A browser posting a form wants a page. Anything else wants the fields.
+  const accept = request.headers.get('accept') || '';
+  if (accept.includes('text/html')) {
+    const body = `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Not open yet - Crosspeel</title>
+<style>
+:root{--page:#FAFBF9;--rule:#CFD6D0;--ink:#14201B;--ink-2:#55635C;--delta:#2B3A8F}
+body{margin:0;background:var(--page);color:var(--ink);font:400 1rem/1.55 "IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif}
+main{max-width:68ch;margin:0 auto;padding:64px 24px}
+h1{font-size:1.5rem;line-height:1.25;font-weight:600;margin:0 0 16px}
+p{margin:0 0 16px}
+a{color:var(--delta)}
+hr{border:0;border-top:1px solid var(--rule);margin:40px 0}
+.small{font-size:.875rem;color:var(--ink-2)}
+</style></head><body><main>
+<h1>The Bakeoff is not open yet</h1>
+<p>Nothing was submitted and nothing was charged. The engine that runs a report is
+built and tested; it is not deployed.</p>
+<p>The method is published at <a href="/method/">/method</a>, and every endpoint
+observed so far is at <a href="/endpoints/">/endpoints</a>.</p>
+<p>To be told when it opens, write to
+<a href="mailto:tom@crosspeel.com">tom@crosspeel.com</a>.</p>
+<hr>
+<p class="small"><a href="/bakeoff/">Back to the Bakeoff page</a></p>
+</main></body></html>`;
+    return new Response(body, { status: 503, headers: { ...headers, 'content-type': 'text/html; charset=utf-8' } });
+  }
+
+  return new Response(
+    JSON.stringify({ status: 'not_open', submitted: false, charged: false, message: BAKEOFF_MESSAGE, contact: 'tom@crosspeel.com' }, null, 2),
+    { status: 503, headers: { ...headers, 'content-type': 'application/json; charset=utf-8' } }
+  );
+}
+
 export default {
   /**
    * @param {Request} request
@@ -236,6 +304,11 @@ export default {
     const { pathname } = new URL(request.url);
     if (pathname === '/evidence' || pathname.startsWith(EVIDENCE_PREFIX)) {
       return handleEvidence(request, env);
+    }
+    // Every method, not just POST. A buyer who reloads the page after submitting
+    // sends a GET here, and a blank 405 on that is the same silence.
+    if (pathname === BAKEOFF_PATH || pathname.startsWith(`${BAKEOFF_PATH}/`)) {
+      return handleBakeoff(request);
     }
     // Not reachable under the shipped wrangler.json, where run_worker_first is
     // scoped to /evidence/*. Present so that a wider scope, set later, does not

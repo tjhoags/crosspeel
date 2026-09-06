@@ -6,7 +6,11 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/evidence/*"]
+    "run_worker_first": [
+      "/evidence/*",
+      "/api/bakeoff",
+      "/api/bakeoff/*"
+    ]
   },
   "r2_buckets": [
     {
